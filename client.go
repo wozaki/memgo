@@ -1,5 +1,9 @@
 package memgo
 
+import (
+	"fmt"
+)
+
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
 type Client struct {
@@ -20,6 +24,9 @@ func Set(k string, v string) (resp *Response, err error) {
 }
 
 func (c *Client) Set(k string, v string) (resp *Response, err error) {
+	conn := NewConnection(c)
+	defer conn.Close()
+
 	var r = &Response{}
 	r.Status = k + ":" + v
 
