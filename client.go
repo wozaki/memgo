@@ -7,8 +7,8 @@ import (
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
 type Client struct {
-	Host string
-	Port int
+	Host      string
+	Port      int
 	Transport string
 }
 
