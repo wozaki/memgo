@@ -2,11 +2,12 @@ package memgo
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
-//TODO: initialize host and port
 type Client struct {
+	Host string
+	Port int
 }
 
-var DefaultClient = &Client{}
+var DefaultClient = &Client{Host: "localhost", Port: 11211}
 
 type Response struct {
 	Status string
