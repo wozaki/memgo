@@ -5,9 +5,10 @@ package memgo
 type Client struct {
 	Host string
 	Port int
+	Transport string
 }
 
-var DefaultClient = &Client{Host: "localhost", Port: 11211}
+var DefaultClient = &Client{Host: "localhost", Port: 11211, Transport: "tcp"}
 
 type Response struct {
 	Status string
