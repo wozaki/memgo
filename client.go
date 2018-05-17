@@ -27,6 +27,17 @@ func (c *Client) Set(k string, v string) (resp *Response, err error) {
 	conn := NewConnection(c)
 	defer conn.Close()
 
+	// TODO: Use set command
+	conn.Write([]byte("stats\n"))
+	conn.Write([]byte("quit\n"))
+
+	reply := make([]byte, 1024)
+	_, err = conn.Read(reply)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("reply", string(reply))
+
 	var r = &Response{}
 	r.Status = k + ":" + v
 
