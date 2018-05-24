@@ -2,6 +2,7 @@ package memgo
 
 import (
 	"fmt"
+	"strconv"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
@@ -27,9 +28,7 @@ func (c *Client) Set(k string, v string) (resp *Response, err error) {
 	conn := NewConnection(c)
 	defer conn.Close()
 
-	// TODO: Use set command
-	conn.Write([]byte("stats\n"))
-	conn.Write([]byte("quit\n"))
+	conn.Write([]byte("set " + k + " 0 0 " + strconv.Itoa(len(v)) + "\r\n" + v + "\r\n"))
 
 	reply := make([]byte, 1024)
 	_, err = conn.Read(reply)
