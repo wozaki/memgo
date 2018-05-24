@@ -2,6 +2,8 @@ package memgo
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
@@ -19,27 +21,55 @@ type Response struct {
 }
 
 //TODO: define as specific type
-func Set(k string, v string) (resp *Response, err error) {
-	return DefaultClient.Set(k, v)
+func Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
+	return DefaultClient.Set(k, v, flags, exptime)
 }
 
-func (c *Client) Set(k string, v string) (resp *Response, err error) {
+func Get(k string) (resp *Response, err error) {
+	return DefaultClient.Get(k)
+}
+
+const Newline = "\r\n"
+
+func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
 	conn := NewConnection(c)
 	defer conn.Close()
 
-	// TODO: Use set command
-	conn.Write([]byte("stats\n"))
-	conn.Write([]byte("quit\n"))
+	command := "set"
+	byteSize := len(v)
+
+	req := []string{command, k, strconv.Itoa(flags), strconv.Itoa(exptime), strconv.Itoa(byteSize)}
+	conn.Write([]byte(strings.Join(req, " ") + Newline + v + Newline))
 
 	reply := make([]byte, 1024)
 	_, err = conn.Read(reply)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("reply", string(reply))
+	fmt.Println("SET", string(reply))
 
 	var r = &Response{}
 	r.Status = k + ":" + v
 
+	return r, nil
+}
+
+func (c *Client) Get(k string) (resp *Response, err error) {
+	conn := NewConnection(c)
+	defer conn.Close()
+
+	command := "get"
+
+	req := []string{command, k}
+	conn.Write([]byte(strings.Join(req, " ") + Newline))
+
+	reply := make([]byte, 1024)
+	_, err = conn.Read(reply)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("GET", string(reply))
+
+	var r = &Response{}
 	return r, nil
 }
