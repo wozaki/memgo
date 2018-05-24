@@ -21,21 +21,17 @@ type Response struct {
 }
 
 //TODO: define as specific type
-func Set(k string, v string) (resp *Response, err error) {
-	return DefaultClient.Set(k, v)
+func Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
+	return DefaultClient.Set(k, v, flags, exptime)
 }
 
 const Newline = "\r\n"
 
-func (c *Client) Set(k string, v string) (resp *Response, err error) {
+func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
 	conn := NewConnection(c)
 	defer conn.Close()
 
 	command := "set"
-
-	//TODO: define as argument
-	flags := 0
-	exptime := 0
 	byteSize := len(v)
 
 	req := []string{command, k, strconv.Itoa(flags), strconv.Itoa(exptime), strconv.Itoa(byteSize)}
