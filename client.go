@@ -42,7 +42,7 @@ func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("reply", string(reply))
+	fmt.Println("SET", string(reply))
 
 	var r = &Response{}
 	r.Status = k + ":" + v
