@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"bufio"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
@@ -18,6 +19,7 @@ var DefaultClient = &Client{Host: "localhost", Port: 11211, Transport: "tcp"}
 
 type Response struct {
 	Status string
+	Val    string // TODO: use generics?
 }
 
 //TODO: define as specific type
@@ -63,13 +65,19 @@ func (c *Client) Get(k string) (resp *Response, err error) {
 	req := []string{command, k}
 	conn.Write([]byte(strings.Join(req, " ") + Newline))
 
-	reply := make([]byte, 1024)
-	_, err = conn.Read(reply)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("GET", string(reply))
-
 	var r = &Response{}
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		if strings.HasPrefix(scanner.Text(), "VALUE") {
+			//TODO: parse key, flag, and exptime
+			scanner.Scan()
+			r.Val = scanner.Text()
+		}
+
+		if scanner.Text() == "END" {
+			break
+		}
+	}
+
 	return r, nil
 }
