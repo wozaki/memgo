@@ -9,13 +9,21 @@ import (
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
-type Client struct {
+type Destination struct {
 	Host      string
 	Port      int
+}
+
+func (d *Destination) Address() string {
+	return d.Host + ":" + strconv.Itoa(d.Port)
+}
+
+type Client struct {
+	Destinations []Destination
 	Transport string
 }
 
-var DefaultClient = &Client{Host: "localhost", Port: 11211, Transport: "tcp"}
+var DefaultClient = &Client{Destinations: []Destination{{Host: "localhost", Port: 11211}}, Transport: "tcp"}
 
 type Response struct {
 	Status string
@@ -34,7 +42,7 @@ func Get(k string) (resp *Response, err error) {
 const Newline = "\r\n"
 
 func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
-	conn := NewConnection(c)
+	conn := NewConnection(c, k)
 	defer conn.Close()
 
 	command := "set"
@@ -57,7 +65,7 @@ func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response
 }
 
 func (c *Client) Get(k string) (resp *Response, err error) {
-	conn := NewConnection(c)
+	conn := NewConnection(c, k)
 	defer conn.Close()
 
 	command := "get"
