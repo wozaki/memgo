@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"bufio"
+	"stathat.com/c/consistent"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
@@ -14,16 +15,33 @@ type Destination struct {
 	Port      int
 }
 
+type Destinations struct {
+	C *consistent.Consistent
+}
+
+func (d *Destinations) GetAddress(key string) (resp string, err error) {
+	return d.C.Get(key)
+}
+
 func (d *Destination) Address() string {
 	return d.Host + ":" + strconv.Itoa(d.Port)
 }
 
 type Client struct {
-	Destinations []Destination
+	Destinations Destinations
 	Transport string
 }
 
-var DefaultClient = &Client{Destinations: []Destination{{Host: "localhost", Port: 11211}}, Transport: "tcp"}
+func NewClient(destinations []Destination, transport string) Client {
+	c := consistent.New()
+	for _, d := range destinations {
+		c.Add(d.Address())
+	}
+
+	return Client{Destinations: Destinations{C: c}, Transport: transport}
+}
+
+var DefaultClient = NewClient([]Destination{{Host: "localhost", Port: 11211}}, "tcp")
 
 type Response struct {
 	Status string
