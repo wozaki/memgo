@@ -5,17 +5,43 @@ import (
 	"strconv"
 	"strings"
 	"bufio"
+	"stathat.com/c/consistent"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
-type Client struct {
+type Destination struct {
 	Host      string
 	Port      int
+}
+
+type Destinations struct {
+	C *consistent.Consistent
+}
+
+func (d *Destinations) GetAddress(key string) (resp string, err error) {
+	return d.C.Get(key)
+}
+
+func (d *Destination) Address() string {
+	return d.Host + ":" + strconv.Itoa(d.Port)
+}
+
+type Client struct {
+	Destinations Destinations
 	Transport string
 }
 
-var DefaultClient = &Client{Host: "localhost", Port: 11211, Transport: "tcp"}
+func NewClient(destinations []Destination, transport string) Client {
+	c := consistent.New()
+	for _, d := range destinations {
+		c.Add(d.Address())
+	}
+
+	return Client{Destinations: Destinations{C: c}, Transport: transport}
+}
+
+var DefaultClient = NewClient([]Destination{{Host: "localhost", Port: 11211}}, "tcp")
 
 type Response struct {
 	Status string
@@ -34,7 +60,7 @@ func Get(k string) (resp *Response, err error) {
 const Newline = "\r\n"
 
 func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
-	conn := NewConnection(c)
+	conn := NewConnection(c, k)
 	defer conn.Close()
 
 	command := "set"
@@ -57,7 +83,7 @@ func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response
 }
 
 func (c *Client) Get(k string) (resp *Response, err error) {
-	conn := NewConnection(c)
+	conn := NewConnection(c, k)
 	defer conn.Close()
 
 	command := "get"
