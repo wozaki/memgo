@@ -5,18 +5,9 @@ import (
 	"strconv"
 	"strings"
 	"bufio"
-	"stathat.com/c/consistent"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
-
-type Destinations struct {
-	Hashing *consistent.Consistent
-}
-
-func (d *Destinations) GetAddress(key string) (resp string, err error) {
-	return d.Hashing.Get(key)
-}
 
 type Client struct {
 	Destinations Destinations
@@ -24,12 +15,7 @@ type Client struct {
 }
 
 func NewClient(destinations []string, transport string) Client {
-	c := consistent.New()
-	for _, d := range destinations {
-		c.Add(d)
-	}
-
-	return Client{Destinations: Destinations{Hashing: c}, Transport: transport}
+	return Client{Destinations: NewDestinations(destinations), Transport: transport}
 }
 
 var DefaultClient = NewClient([]string{"localhost:11211"}, "tcp")
