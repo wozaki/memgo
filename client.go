@@ -10,21 +10,12 @@ import (
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
-type Destination struct {
-	Host      string
-	Port      int
-}
-
 type Destinations struct {
-	C *consistent.Consistent
+	Hashing *consistent.Consistent
 }
 
 func (d *Destinations) GetAddress(key string) (resp string, err error) {
-	return d.C.Get(key)
-}
-
-func (d *Destination) Address() string {
-	return d.Host + ":" + strconv.Itoa(d.Port)
+	return d.Hashing.Get(key)
 }
 
 type Client struct {
@@ -32,16 +23,16 @@ type Client struct {
 	Transport string
 }
 
-func NewClient(destinations []Destination, transport string) Client {
+func NewClient(destinations []string, transport string) Client {
 	c := consistent.New()
 	for _, d := range destinations {
-		c.Add(d.Address())
+		c.Add(d)
 	}
 
-	return Client{Destinations: Destinations{C: c}, Transport: transport}
+	return Client{Destinations: Destinations{Hashing: c}, Transport: transport}
 }
 
-var DefaultClient = NewClient([]Destination{{Host: "localhost", Port: 11211}}, "tcp")
+var DefaultClient = NewClient([]string{"localhost:11211"}, "tcp")
 
 type Response struct {
 	Status string
