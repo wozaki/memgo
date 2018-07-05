@@ -2,9 +2,24 @@ package memgo
 
 import (
 	"testing"
+	"net"
 )
 
+const testServer = "localhost:11211"
+
+func flushAll(t *testing.T) bool {
+	c, err := net.Dial("tcp", testServer)
+	if err != nil {
+		panic("can't connect" + testServer)
+	}
+	c.Write([]byte("flush_all\r\n"))
+	c.Close()
+	return true
+}
+
 func TestSetAndGet(t *testing.T) {
+	flushAll(t)
+
 	key := "test_key"
 	value := "123"
 
@@ -22,6 +37,8 @@ func TestSetAndGet(t *testing.T) {
 
 //TODO: Test values are scattered
 func TestSharding(t *testing.T) {
+	flushAll(t)
+
 	key := "test_key"
 	value := "123"
 
