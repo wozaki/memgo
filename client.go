@@ -5,9 +5,12 @@ import (
 	"strconv"
 	"strings"
 	"bufio"
+	"errors"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
+
+var ErrorNotStored = errors.New("memcached returned NOT_STORED")
 
 type Client struct {
 	Destinations Destinations
@@ -28,6 +31,10 @@ type Response struct {
 //TODO: define as specific type
 func Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
 	return DefaultClient.Set(k, v, flags, exptime)
+}
+
+func Add(k string, v string, flags int, exptime int) error {
+	return DefaultClient.Add(k, v, flags, exptime)
 }
 
 func Get(k string) (resp *Response, err error) {
@@ -57,6 +64,29 @@ func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response
 	r.Status = k + ":" + v
 
 	return r, nil
+}
+
+func (c *Client) Add(k string, v string, flags int, exptime int) error {
+	conn := NewConnection(c, k)
+	defer conn.Close()
+
+	command := "add"
+	byteSize := len(v)
+
+	req := []string{command, k, strconv.Itoa(flags), strconv.Itoa(exptime), strconv.Itoa(byteSize)}
+	conn.Write([]byte(strings.Join(req, " ") + Newline + v + Newline))
+
+	scanner := bufio.NewScanner(conn)
+	scanner.Scan()
+	s := scanner.Text()
+	switch s {
+	case "STORED":
+		return nil
+	case "NOT_STORED":
+		return ErrorNotStored
+	default:
+		panic("returned unexpected value: " + s)
+	}
 }
 
 func (c *Client) Get(k string) (resp *Response, err error) {

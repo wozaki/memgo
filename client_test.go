@@ -35,6 +35,28 @@ func TestSetAndGet(t *testing.T) {
 	}
 }
 
+func TestAdd(t *testing.T) {
+	flushAll(t)
+
+	key := "test_key"
+	value := "123"
+
+	addedErr := Add(key, value, 0, 0)
+	if addedErr != nil {
+		t.Errorf("expected addedErr is nil")
+	}
+
+	actual, _ := Get(key)
+	if actual.Val != "123" {
+		t.Errorf("actual %v, expected %v", actual, "123")
+	}
+
+	addAgain := Add(key, value, 0, 0)
+	if addAgain != ErrorNotStored {
+		t.Errorf("Add must return ErrorNotStored given the same key")
+	}
+}
+
 //TODO: Test values are scattered
 func TestSharding(t *testing.T) {
 	flushAll(t)
