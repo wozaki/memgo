@@ -23,11 +23,17 @@ func TestSetAndGet(t *testing.T) {
 	key := "test_key"
 	value := "123"
 
-	Set(key, value, 0, 0)
+	Set(key, value, 1, 0)
 	actual, err := Get(key)
 
 	if actual.Val != "123" {
 		t.Errorf("actual %v, expected %v", actual, "123")
+	}
+	if actual.Flags != 1 {
+		t.Errorf("actual %v, expected %v", actual, "1")
+	}
+	if actual.ByteSize != 3 {
+		t.Errorf("actual %v, expected %v", actual, "3")
 	}
 
 	if err != nil {
