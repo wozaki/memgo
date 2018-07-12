@@ -50,14 +50,16 @@ type Command struct {
 	exptime int
 }
 
+func (c *Command) buildRequest() []byte {
+	byteSize := len(c.value)
+	req := []string{c.name, c.key, strconv.Itoa(c.flags), strconv.Itoa(c.exptime), strconv.Itoa(byteSize)}
+	return []byte(strings.Join(req, " ") + Newline + c.value + Newline)
+}
+
 func (c *Client) store(command Command) error {
 	conn := NewConnection(c, command.key)
 	defer conn.Close()
-
-	byteSize := len(command.value)
-
-	req := []string{command.name, command.key, strconv.Itoa(command.flags), strconv.Itoa(command.exptime), strconv.Itoa(byteSize)}
-	conn.Write([]byte(strings.Join(req, " ") + Newline + command.value + Newline))
+	conn.Write(command.buildRequest())
 
 	scanner := bufio.NewScanner(conn)
 	scanner.Scan()
