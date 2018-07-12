@@ -1,7 +1,6 @@
 package memgo
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"bufio"
@@ -29,7 +28,7 @@ type Response struct {
 }
 
 //TODO: define as specific type
-func Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
+func Set(k string, v string, flags int, exptime int) error {
 	return DefaultClient.Set(k, v, flags, exptime)
 }
 
@@ -43,38 +42,24 @@ func Get(k string) (resp *Response, err error) {
 
 const Newline = "\r\n"
 
-func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
-	conn := NewConnection(c, k)
-	defer conn.Close()
-
-	command := "set"
-	byteSize := len(v)
-
-	req := []string{command, k, strconv.Itoa(flags), strconv.Itoa(exptime), strconv.Itoa(byteSize)}
-	conn.Write([]byte(strings.Join(req, " ") + Newline + v + Newline))
-
-	reply := make([]byte, 1024)
-	_, err = conn.Read(reply)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("SET", string(reply))
-
-	var r = &Response{}
-	r.Status = k + ":" + v
-
-	return r, nil
+type Command struct {
+	name string
+	key string
+	value string
+	flags int
+	exptime int
 }
 
-func (c *Client) Add(k string, v string, flags int, exptime int) error {
-	conn := NewConnection(c, k)
+func (c *Command) buildRequest() []byte {
+	byteSize := len(c.value)
+	req := []string{c.name, c.key, strconv.Itoa(c.flags), strconv.Itoa(c.exptime), strconv.Itoa(byteSize)}
+	return []byte(strings.Join(req, " ") + Newline + c.value + Newline)
+}
+
+func (c *Client) store(command Command) error {
+	conn := NewConnection(c, command.key)
 	defer conn.Close()
-
-	command := "add"
-	byteSize := len(v)
-
-	req := []string{command, k, strconv.Itoa(flags), strconv.Itoa(exptime), strconv.Itoa(byteSize)}
-	conn.Write([]byte(strings.Join(req, " ") + Newline + v + Newline))
+	conn.Write(command.buildRequest())
 
 	scanner := bufio.NewScanner(conn)
 	scanner.Scan()
@@ -87,6 +72,14 @@ func (c *Client) Add(k string, v string, flags int, exptime int) error {
 	default:
 		panic("returned unexpected value: " + s)
 	}
+}
+
+func (c *Client) Set(k string, v string, flags int, exptime int) error {
+	return c.store(Command{name: "set", key: k, value: v, flags: flags, exptime: exptime})
+}
+
+func (c *Client) Add(k string, v string, flags int, exptime int) error {
+	return c.store(Command{name: "add", key: k, value: v, flags: flags, exptime: exptime})
 }
 
 func (c *Client) Get(k string) (resp *Response, err error) {
