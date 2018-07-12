@@ -39,15 +39,6 @@ func TestSetAndGet(t *testing.T) {
 	if err != nil {
 		t.Errorf("return error %v", err)
 	}
-
-	actual2, err2 := Get("fugaaaaaa")
-	if actual2 != nil {
-		t.Errorf("actual %v, expected %v", actual, "123")
-	}
-
-	if err2 != nil {
-		t.Errorf("return error %v", err)
-	}
 }
 
 func TestGetNothing(t *testing.T) {
