@@ -42,36 +42,22 @@ func Get(k string) (resp *Response, err error) {
 
 const Newline = "\r\n"
 
-func (c *Client) Set(k string, v string, flags int, exptime int) error {
-	conn := NewConnection(c, k)
-	defer conn.Close()
-
-	command := "set"
-	byteSize := len(v)
-
-	req := []string{command, k, strconv.Itoa(flags), strconv.Itoa(exptime), strconv.Itoa(byteSize)}
-	conn.Write([]byte(strings.Join(req, " ") + Newline + v + Newline))
-
-	scanner := bufio.NewScanner(conn)
-	scanner.Scan()
-	s := scanner.Text()
-	switch s {
-	case "STORED":
-		return nil
-	default:
-		panic("returned unexpected value: " + s)
-	}
+type Command struct {
+	name string
+	key string
+	value string
+	flags int
+	exptime int
 }
 
-func (c *Client) Add(k string, v string, flags int, exptime int) error {
-	conn := NewConnection(c, k)
+func (c *Client) store(command Command) error {
+	conn := NewConnection(c, command.key)
 	defer conn.Close()
 
-	command := "add"
-	byteSize := len(v)
+	byteSize := len(command.value)
 
-	req := []string{command, k, strconv.Itoa(flags), strconv.Itoa(exptime), strconv.Itoa(byteSize)}
-	conn.Write([]byte(strings.Join(req, " ") + Newline + v + Newline))
+	req := []string{command.name, command.key, strconv.Itoa(command.flags), strconv.Itoa(command.exptime), strconv.Itoa(byteSize)}
+	conn.Write([]byte(strings.Join(req, " ") + Newline + command.value + Newline))
 
 	scanner := bufio.NewScanner(conn)
 	scanner.Scan()
@@ -84,6 +70,14 @@ func (c *Client) Add(k string, v string, flags int, exptime int) error {
 	default:
 		panic("returned unexpected value: " + s)
 	}
+}
+
+func (c *Client) Set(k string, v string, flags int, exptime int) error {
+	return c.store(Command{name: "set", key: k, value: v, flags: flags, exptime: exptime})
+}
+
+func (c *Client) Add(k string, v string, flags int, exptime int) error {
+	return c.store(Command{name: "add", key: k, value: v, flags: flags, exptime: exptime})
 }
 
 func (c *Client) Get(k string) (resp *Response, err error) {
