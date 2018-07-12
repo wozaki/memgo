@@ -94,25 +94,18 @@ func (c *Client) Get(k string) (resp *Response, err error) {
 
 	var r = &Response{}
 	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
-		heads := strings.Split(scanner.Text(), " ")
-		switch heads[0] {
-		case "END":
-			return nil, nil
-		case "VALUE":
-			r.Flags, _ = strconv.Atoi(heads[2])
-			r.ByteSize, _ = strconv.Atoi(heads[3])
-			scanner.Scan()
-			r.Val = scanner.Text()
-		default:
-			panic("Unexpected response:" + heads[0])
-		}
-
-		if scanner.Text() == "END" {
-			break
-		}
+	scanner.Scan()
+	heads := strings.Split(scanner.Text(), " ")
+	switch heads[0] {
+	case "END":
+		return nil, nil
+	case "VALUE":
+		r.Flags, _ = strconv.Atoi(heads[2])
+		r.ByteSize, _ = strconv.Atoi(heads[3])
+		scanner.Scan()
+		r.Val = scanner.Text()
+		return r, nil
+	default:
+		panic("Unexpected response:" + heads[0])
 	}
-
-	return r, nil
 }
