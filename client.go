@@ -1,7 +1,6 @@
 package memgo
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"bufio"
@@ -29,7 +28,7 @@ type Response struct {
 }
 
 //TODO: define as specific type
-func Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
+func Set(k string, v string, flags int, exptime int) error {
 	return DefaultClient.Set(k, v, flags, exptime)
 }
 
@@ -43,7 +42,7 @@ func Get(k string) (resp *Response, err error) {
 
 const Newline = "\r\n"
 
-func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response, err error) {
+func (c *Client) Set(k string, v string, flags int, exptime int) error {
 	conn := NewConnection(c, k)
 	defer conn.Close()
 
@@ -53,17 +52,15 @@ func (c *Client) Set(k string, v string, flags int, exptime int) (resp *Response
 	req := []string{command, k, strconv.Itoa(flags), strconv.Itoa(exptime), strconv.Itoa(byteSize)}
 	conn.Write([]byte(strings.Join(req, " ") + Newline + v + Newline))
 
-	reply := make([]byte, 1024)
-	_, err = conn.Read(reply)
-	if err != nil {
-		panic(err)
+	scanner := bufio.NewScanner(conn)
+	scanner.Scan()
+	s := scanner.Text()
+	switch s {
+	case "STORED":
+		return nil
+	default:
+		panic("returned unexpected value: " + s)
 	}
-	fmt.Println("SET", string(reply))
-
-	var r = &Response{}
-	r.Status = k + ":" + v
-
-	return r, nil
 }
 
 func (c *Client) Add(k string, v string, flags int, exptime int) error {
