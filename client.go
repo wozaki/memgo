@@ -43,20 +43,6 @@ func Get(k string) (resp *Response, err error) {
 
 const Newline = "\r\n"
 
-type Command struct {
-	name string
-	key string
-	value string
-	flags int
-	exptime int
-}
-
-func (c *Command) buildRequest() []byte {
-	byteSize := len(c.value)
-	req := []string{c.name, c.key, strconv.Itoa(c.flags), strconv.Itoa(c.exptime), strconv.Itoa(byteSize)}
-	return []byte(strings.Join(req, " ") + Newline + c.value + Newline)
-}
-
 func (c *Client) store(command Command) error {
 	conn := NewConnection(c, command.key)
 	defer conn.Close()
