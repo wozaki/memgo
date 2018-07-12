@@ -97,11 +97,16 @@ func (c *Client) Get(k string) (resp *Response, err error) {
 	for scanner.Scan() {
 		// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
 		heads := strings.Split(scanner.Text(), " ")
-		if heads[0] == "VALUE" {
+		switch heads[0] {
+		case "END":
+			return nil, nil
+		case "VALUE":
 			r.Flags, _ = strconv.Atoi(heads[2])
 			r.ByteSize, _ = strconv.Atoi(heads[3])
 			scanner.Scan()
 			r.Val = scanner.Text()
+		default:
+			panic("Unexpected response:" + heads[0])
 		}
 
 		if scanner.Text() == "END" {
