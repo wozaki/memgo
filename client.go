@@ -23,8 +23,9 @@ func NewClient(destinations []string, transport string) Client {
 var DefaultClient = NewClient([]string{"localhost:11211"}, "tcp")
 
 type Response struct {
-	Status string
-	Val    string // TODO: use generics?
+	Val      string
+	Flags    int
+	ByteSize int
 }
 
 //TODO: define as specific type
@@ -94,10 +95,18 @@ func (c *Client) Get(k string) (resp *Response, err error) {
 	var r = &Response{}
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "VALUE") {
-			//TODO: parse key, flag, and exptime
+		// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
+		heads := strings.Split(scanner.Text(), " ")
+		switch heads[0] {
+		case "END":
+			return nil, nil
+		case "VALUE":
+			r.Flags, _ = strconv.Atoi(heads[2])
+			r.ByteSize, _ = strconv.Atoi(heads[3])
 			scanner.Scan()
 			r.Val = scanner.Text()
+		default:
+			panic("Unexpected response:" + heads[0])
 		}
 
 		if scanner.Text() == "END" {
