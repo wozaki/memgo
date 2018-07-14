@@ -83,7 +83,7 @@ func TestSharding(t *testing.T) {
 	key := "test_key"
 	value := "123"
 
-	client := NewClient([]string{"localhost:11211", "localhost:11212"}, "tcp")
+	client := NewClient([]string{"localhost:11211", "localhost:11212"})
 
 	client.Set(key, value, 0, 0)
 	actual, err := Get(key)

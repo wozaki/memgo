@@ -11,7 +11,7 @@ func NewConnection(client *Client, key string) net.Conn {
 		panic(err)
 	}
 
-	conn, err := net.Dial(client.Transport, destination)
+	conn, err := net.Dial("tcp", destination)
 	if err != nil {
 		panic(err)
 	}

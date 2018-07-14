@@ -13,14 +13,13 @@ var ErrorNotStored = errors.New("memcached returned NOT_STORED")
 
 type Client struct {
 	Destinations Destinations
-	Transport string
 }
 
-func NewClient(destinations []string, transport string) Client {
-	return Client{Destinations: NewDestinations(destinations), Transport: transport}
+func NewClient(destinations []string) Client {
+	return Client{Destinations: NewDestinations(destinations)}
 }
 
-var DefaultClient = NewClient([]string{"localhost:11211"}, "tcp")
+var DefaultClient = NewClient([]string{"localhost:11211"})
 
 type Response struct {
 	Val      string
