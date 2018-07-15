@@ -77,6 +77,9 @@ func (c *Client) Get(k string) (item *Item, err error) {
 	req := []string{command, k}
 	conn.Write([]byte(strings.Join(req, " ") + Newline))
 
+	// The format is here:
+	// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
+	// <data block>\r\n
 	scanner := bufio.NewScanner(conn)
 	scanner.Scan()
 	heads := strings.Split(scanner.Text(), " ")
