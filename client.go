@@ -28,12 +28,6 @@ type Item struct {
 	Exptime int // TODO: use time.Duration
 }
 
-type Response struct {
-	Val      string
-	Flags    int
-	ByteSize int
-}
-
 func Set(item Item) error {
 	return DefaultClient.Set(item)
 }
@@ -42,7 +36,7 @@ func Add(item Item) error {
 	return DefaultClient.Add(item)
 }
 
-func Get(k string) (resp *Response, err error) {
+func Get(k string) (item *Item, err error) {
 	return DefaultClient.Get(k)
 }
 
@@ -74,7 +68,7 @@ func (c *Client) Add(item Item) error {
 	return c.store(Command{name: "add", item: item})
 }
 
-func (c *Client) Get(k string) (resp *Response, err error) {
+func (c *Client) Get(k string) (item *Item, err error) {
 	conn := NewConnection(c, k)
 	defer conn.Close()
 
@@ -83,7 +77,6 @@ func (c *Client) Get(k string) (resp *Response, err error) {
 	req := []string{command, k}
 	conn.Write([]byte(strings.Join(req, " ") + Newline))
 
-	var r = &Response{}
 	scanner := bufio.NewScanner(conn)
 	scanner.Scan()
 	heads := strings.Split(scanner.Text(), " ")
@@ -91,11 +84,12 @@ func (c *Client) Get(k string) (resp *Response, err error) {
 	case "END":
 		return nil, nil
 	case "VALUE":
-		r.Flags, _ = strconv.Atoi(heads[2])
-		r.ByteSize, _ = strconv.Atoi(heads[3])
+		var item = &Item{}
+		flags, _ := strconv.ParseUint(heads[2], 10, 32)
+		item.Flags = uint32(flags)
 		scanner.Scan()
-		r.Val = scanner.Text()
-		return r, nil
+		item.Value = scanner.Text()
+		return item, nil
 	default:
 		panic("Unexpected response:" + heads[0])
 	}

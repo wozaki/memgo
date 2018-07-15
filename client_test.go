@@ -26,14 +26,11 @@ func TestSetAndGet(t *testing.T) {
 	Set(Item{Key: key, Value: value, Flags: 1, Exptime: 0})
 	actual, err := Get(key)
 
-	if actual.Val != "123" {
+	if actual.Value != "123" {
 		t.Errorf("actual %v, expected %v", actual, "123")
 	}
 	if actual.Flags != 1 {
 		t.Errorf("actual %v, expected %v", actual, "1")
-	}
-	if actual.ByteSize != 3 {
-		t.Errorf("actual %v, expected %v", actual, "3")
 	}
 
 	if err != nil {
@@ -66,7 +63,7 @@ func TestAdd(t *testing.T) {
 	}
 
 	actual, _ := Get(key)
-	if actual.Val != "123" {
+	if actual.Value != "123" {
 		t.Errorf("actual %v, expected %v", actual, "123")
 	}
 
@@ -88,7 +85,7 @@ func TestSharding(t *testing.T) {
 	client.Set(Item{Key: key, Value: value})
 	actual, err := Get(key)
 
-	if actual.Val != "123" {
+	if actual.Value != "123" {
 		t.Errorf("actual %v, expected %v", actual, "123")
 	}
 
