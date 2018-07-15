@@ -9,14 +9,11 @@ import (
 
 type Command struct {
 	name string
-	key string
-	value string
-	flags int
-	exptime int
+	item Item
 }
 
 func (c *Command) buildRequest() []byte {
-	byteSize := len(c.value)
-	req := []string{c.name, c.key, strconv.Itoa(c.flags), strconv.Itoa(c.exptime), strconv.Itoa(byteSize)}
-	return []byte(strings.Join(req, " ") + Newline + c.value + Newline)
+	byteSize := len(c.item.Value)
+	req := []string{c.name, c.item.Key, strconv.FormatUint(uint64(c.item.Flags),10), strconv.Itoa(c.item.Exptime), strconv.Itoa(byteSize)}
+	return []byte(strings.Join(req, " ") + Newline + c.item.Value + Newline)
 }

@@ -9,7 +9,7 @@ import (
 
 func main() {
 	mc := memgo.NewClient([]string{"cache1.example.com:11211", "cache1.example.com:11211"})
-	mc.Set("foo", "my value", 123, 0)
+	mc.Set(mc.Item{Key: "foo", Value: "my value"})
 
 	res, err := mc.Get("foo")
 	...

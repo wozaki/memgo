@@ -34,13 +34,12 @@ type Response struct {
 	ByteSize int
 }
 
-//TODO: define as specific type
-func Set(k string, v string, flags int, exptime int) error {
-	return DefaultClient.Set(k, v, flags, exptime)
+func Set(item Item) error {
+	return DefaultClient.Set(item)
 }
 
-func Add(k string, v string, flags int, exptime int) error {
-	return DefaultClient.Add(k, v, flags, exptime)
+func Add(item Item) error {
+	return DefaultClient.Add(item)
 }
 
 func Get(k string) (resp *Response, err error) {
@@ -50,7 +49,7 @@ func Get(k string) (resp *Response, err error) {
 const Newline = "\r\n"
 
 func (c *Client) store(command Command) error {
-	conn := NewConnection(c, command.key)
+	conn := NewConnection(c, command.item.Key)
 	defer conn.Close()
 	conn.Write(command.buildRequest())
 
@@ -67,12 +66,12 @@ func (c *Client) store(command Command) error {
 	}
 }
 
-func (c *Client) Set(k string, v string, flags int, exptime int) error {
-	return c.store(Command{name: "set", key: k, value: v, flags: flags, exptime: exptime})
+func (c *Client) Set(item Item) error {
+	return c.store(Command{name: "set", item: item})
 }
 
-func (c *Client) Add(k string, v string, flags int, exptime int) error {
-	return c.store(Command{name: "add", key: k, value: v, flags: flags, exptime: exptime})
+func (c *Client) Add(item Item) error {
+	return c.store(Command{name: "add", item: item})
 }
 
 func (c *Client) Get(k string) (resp *Response, err error) {
