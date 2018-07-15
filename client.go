@@ -84,12 +84,9 @@ func (c *Client) Get(k string) (item *Item, err error) {
 	case "END":
 		return nil, nil
 	case "VALUE":
-		var item = &Item{}
 		flags, _ := strconv.ParseUint(heads[2], 10, 32)
-		item.Flags = uint32(flags)
 		scanner.Scan()
-		item.Value = scanner.Text()
-		return item, nil
+		return &Item{Key: k, Value: scanner.Text(), Flags: uint32(flags)}, nil
 	default:
 		panic("Unexpected response:" + heads[0])
 	}
