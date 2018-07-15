@@ -21,6 +21,13 @@ func NewClient(destinations []string) Client {
 
 var DefaultClient = NewClient([]string{"localhost:11211"})
 
+type Item struct {
+	Key     string
+	Value   string
+	Flags   uint32
+	Exptime int // TODO: use time.Duration
+}
+
 type Response struct {
 	Val      string
 	Flags    int
