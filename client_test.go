@@ -3,6 +3,7 @@ package memgo
 import (
 	"testing"
 	"net"
+	"math/rand"
 )
 
 const testServer = "localhost:11211"
@@ -17,38 +18,74 @@ func flushAll(t *testing.T) bool {
 	return true
 }
 
-func TestSetAndGet(t *testing.T) {
-	flushAll(t)
-
-	key := "test_key"
-	value := "123"
-
-	Set(Item{Key: key, Value: value, Flags: 1, Exptime: 0})
-	actual, err := Get(key)
-
-	if actual.Value != "123" {
-		t.Errorf("actual %v, expected %v", actual, "123")
+func generateRandomString(n int) string {
+	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letter[rand.Intn(len(letter))]
 	}
-	if actual.Flags != 1 {
-		t.Errorf("actual %v, expected %v", actual, "1")
-	}
-
-	if err != nil {
-		t.Errorf("return error %v", err)
-	}
+	return string(b)
 }
 
-func TestGetNothing(t *testing.T) {
-	flushAll(t)
+func TestSet(t *testing.T) {
+	t.Run("when the key size is 250", func(t *testing.T) {
+		key := generateRandomString(250)
+		err := Set(Item{Key: key, Value: "123"})
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+	})
 
-	actual, err := Get("hoge")
-	if actual != nil {
-		t.Errorf("actual %v, expected %v", actual, "nil")
-	}
+	t.Run("when the key size is 251", func(t *testing.T) {
+		key := generateRandomString(251)
+		err := Set(Item{Key: key, Value: "123"})
+		if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR bad command line format" {
+			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
+		}
+	})
+}
 
-	if err != nil {
-		t.Errorf("return error %v", err)
-	}
+func TestSetAndGet(t *testing.T) {
+	t.Run("Test key size", func(t *testing.T) {
+		flushAll(t)
+
+		// The size is 250
+		key := generateRandomString(250)
+		Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
+		actual, err := Get(key)
+		if actual.Value != "123" {
+			t.Errorf("actual %v, expected %v", actual, "123")
+		}
+		if actual.Flags != 1 {
+			t.Errorf("actual %v, expected %v", actual, "1")
+		}
+		if err != nil {
+			t.Errorf("return error %v", err)
+		}
+
+		// The size is 251
+		key = generateRandomString(251)
+		Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
+		actual, err = Get(key)
+		if actual != nil {
+			t.Errorf("actual %v, expected %v", actual, "nil")
+		}
+		if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR" {
+			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
+		}
+	})
+
+	t.Run("Test without correspondent item", func(t *testing.T) {
+		flushAll(t)
+		
+		actual, err := Get("hoge")
+		if actual != nil {
+			t.Errorf("actual %v, expected %v", actual, "nil")
+		}
+		if err != nil {
+			t.Errorf("return error %v", err)
+		}
+	})
 }
 
 func TestAdd(t *testing.T) {
