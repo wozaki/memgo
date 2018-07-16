@@ -9,6 +9,8 @@ import (
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
+const Newline = "\r\n"
+
 var ErrorNotStored = errors.New("memcached returned NOT_STORED")
 
 func handleErrorResponse(response string) error {
@@ -48,26 +50,6 @@ func Get(k string) (item *Item, err error) {
 	return DefaultClient.Get(k)
 }
 
-const Newline = "\r\n"
-
-func (c *Client) store(command Command) error {
-	conn := NewConnection(c, command.item.Key)
-	defer conn.Close()
-	conn.Write(command.buildRequest())
-
-	scanner := bufio.NewScanner(conn)
-	scanner.Scan()
-	s := scanner.Text()
-	switch s {
-	case "STORED":
-		return nil
-	case "NOT_STORED":
-		return ErrorNotStored
-	default:
-		return handleErrorResponse(s)
-	}
-}
-
 func (c *Client) Set(item Item) error {
 	return c.store(Command{name: "set", item: item})
 }
@@ -100,5 +82,23 @@ func (c *Client) Get(k string) (item *Item, err error) {
 		return &Item{Key: k, Value: scanner.Text(), Flags: uint32(flags)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
+	}
+}
+
+func (c *Client) store(command Command) error {
+	conn := NewConnection(c, command.item.Key)
+	defer conn.Close()
+	conn.Write(command.buildRequest())
+
+	scanner := bufio.NewScanner(conn)
+	scanner.Scan()
+	s := scanner.Text()
+	switch s {
+	case "STORED":
+		return nil
+	case "NOT_STORED":
+		return ErrorNotStored
+	default:
+		return handleErrorResponse(s)
 	}
 }
