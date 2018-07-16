@@ -3,6 +3,7 @@ package memgo
 import (
 	"testing"
 	"net"
+	"math/rand"
 )
 
 const testServer = "localhost:11211"
@@ -15,6 +16,15 @@ func flushAll(t *testing.T) bool {
 	c.Write([]byte("flush_all\r\n"))
 	c.Close()
 	return true
+}
+
+func generateRndomString(n int) string {
+	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letter[rand.Intn(len(letter))]
+	}
+	return string(b)
 }
 
 func TestSetAndGet(t *testing.T) {
@@ -35,6 +45,17 @@ func TestSetAndGet(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("return error %v", err)
+	}
+
+	// Test with over 251 character key
+	key251Len := generateRndomString(251)
+	Set(Item{Key: key251Len, Value: "123"})
+	actual, err = Get(key251Len)
+	if actual != nil {
+		t.Errorf("actual %v, expected %v", actual, "nil")
+	}
+	if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR" {
+		t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
 	}
 }
 

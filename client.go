@@ -56,7 +56,11 @@ func (c *Client) store(command Command) error {
 	case "NOT_STORED":
 		return ErrorNotStored
 	default:
-		panic("returned unexpected value: " + s)
+		if strings.HasPrefix(s, "CLIENT_ERROR") {
+			return errors.New("memcached returned CLIENT_ERROR: " + s)
+		} else {
+			panic("returned unexpected value: " + s)
+		}
 	}
 }
 
@@ -91,6 +95,10 @@ func (c *Client) Get(k string) (item *Item, err error) {
 		scanner.Scan()
 		return &Item{Key: k, Value: scanner.Text(), Flags: uint32(flags)}, nil
 	default:
-		panic("Unexpected response:" + heads[0])
+		if strings.HasPrefix(heads[0], "CLIENT_ERROR") {
+			return nil, errors.New("memcached returned CLIENT_ERROR: " + heads[0])
+		} else {
+			panic("returned unexpected value: " + heads[0])
+		}
 	}
 }
