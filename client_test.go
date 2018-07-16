@@ -46,30 +46,27 @@ func TestSet(t *testing.T) {
 }
 
 func TestSetAndGet(t *testing.T) {
-	flushAll(t)
+	t.Run("Test key size", func(t *testing.T) {
+		flushAll(t)
 
-	t.Run("when the key size is 250", func(t *testing.T) {
+		// The size is 250
 		key := generateRndomString(250)
-		value := "123"
-
-		Set(Item{Key: key, Value: value, Flags: 1, Exptime: 0})
+		Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
 		actual, err := Get(key)
-
 		if actual.Value != "123" {
 			t.Errorf("actual %v, expected %v", actual, "123")
 		}
 		if actual.Flags != 1 {
 			t.Errorf("actual %v, expected %v", actual, "1")
 		}
-
 		if err != nil {
 			t.Errorf("return error %v", err)
 		}
-	})
 
-	t.Run("when the key size is 251", func(t *testing.T) {
-		key := generateRndomString(251)
-		actual, err := Get(key)
+		// The size is 251
+		key = generateRndomString(251)
+		Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
+		actual, err = Get(key)
 		if actual != nil {
 			t.Errorf("actual %v, expected %v", actual, "nil")
 		}
@@ -77,19 +74,18 @@ func TestSetAndGet(t *testing.T) {
 			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
 		}
 	})
-}
 
-func TestGetNothing(t *testing.T) {
-	flushAll(t)
-
-	actual, err := Get("hoge")
-	if actual != nil {
-		t.Errorf("actual %v, expected %v", actual, "nil")
-	}
-
-	if err != nil {
-		t.Errorf("return error %v", err)
-	}
+	t.Run("Test without correspondent item", func(t *testing.T) {
+		flushAll(t)
+		
+		actual, err := Get("hoge")
+		if actual != nil {
+			t.Errorf("actual %v, expected %v", actual, "nil")
+		}
+		if err != nil {
+			t.Errorf("return error %v", err)
+		}
+	})
 }
 
 func TestAdd(t *testing.T) {
