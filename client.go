@@ -53,7 +53,7 @@ func Add(item Item) error {
 	return DefaultClient.Add(item)
 }
 
-func Get(k string) (item *Item, err error) {
+func Get(k string) (response *Response, err error) {
 	return DefaultClient.Get(k)
 }
 
@@ -69,7 +69,7 @@ func (c *Client) Add(item Item) error {
 	return c.store(Command{name: "add", item: item})
 }
 
-func (c *Client) Get(k string) (item *Item, err error) {
+func (c *Client) Get(k string) (response *Response, err error) {
 	conn := NewConnection(c, k)
 	defer conn.Close()
 
@@ -90,7 +90,7 @@ func (c *Client) Get(k string) (item *Item, err error) {
 	case "VALUE":
 		flags, _ := strconv.ParseUint(heads[2], 10, 32)
 		scanner.Scan()
-		return &Item{Key: k, Value: scanner.Text(), Flags: uint32(flags)}, nil
+		return &Response{Key: k, Value: scanner.Text(), Flags: uint32(flags)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}
