@@ -18,7 +18,7 @@ func flushAll(t *testing.T) bool {
 	return true
 }
 
-func generateRndomString(n int) string {
+func generateRandomString(n int) string {
 	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 	b := make([]rune, n)
 	for i := range b {
@@ -29,7 +29,7 @@ func generateRndomString(n int) string {
 
 func TestSet(t *testing.T) {
 	t.Run("when the key size is 250", func(t *testing.T) {
-		key := generateRndomString(250)
+		key := generateRandomString(250)
 		err := Set(Item{Key: key, Value: "123"})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
@@ -37,7 +37,7 @@ func TestSet(t *testing.T) {
 	})
 
 	t.Run("when the key size is 251", func(t *testing.T) {
-		key := generateRndomString(251)
+		key := generateRandomString(251)
 		err := Set(Item{Key: key, Value: "123"})
 		if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR bad command line format" {
 			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
@@ -50,7 +50,7 @@ func TestSetAndGet(t *testing.T) {
 		flushAll(t)
 
 		// The size is 250
-		key := generateRndomString(250)
+		key := generateRandomString(250)
 		Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
 		actual, err := Get(key)
 		if actual.Value != "123" {
@@ -64,7 +64,7 @@ func TestSetAndGet(t *testing.T) {
 		}
 
 		// The size is 251
-		key = generateRndomString(251)
+		key = generateRandomString(251)
 		Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
 		actual, err = Get(key)
 		if actual != nil {
