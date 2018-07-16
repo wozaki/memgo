@@ -11,6 +11,14 @@ import (
 
 var ErrorNotStored = errors.New("memcached returned NOT_STORED")
 
+func handleErrorResponse(response string) error {
+	if strings.HasPrefix(response, "CLIENT_ERROR") {
+		return errors.New("memcached returned CLIENT_ERROR: " + response)
+	} else {
+		panic("returned unexpected value: " + response)
+	}
+}
+
 type Client struct {
 	Destinations Destinations
 }
@@ -56,11 +64,7 @@ func (c *Client) store(command Command) error {
 	case "NOT_STORED":
 		return ErrorNotStored
 	default:
-		if strings.HasPrefix(s, "CLIENT_ERROR") {
-			return errors.New("memcached returned CLIENT_ERROR: " + s)
-		} else {
-			panic("returned unexpected value: " + s)
-		}
+		return handleErrorResponse(s)
 	}
 }
 
@@ -95,10 +99,6 @@ func (c *Client) Get(k string) (item *Item, err error) {
 		scanner.Scan()
 		return &Item{Key: k, Value: scanner.Text(), Flags: uint32(flags)}, nil
 	default:
-		if strings.HasPrefix(heads[0], "CLIENT_ERROR") {
-			return nil, errors.New("memcached returned CLIENT_ERROR: " + heads[0])
-		} else {
-			panic("returned unexpected value: " + heads[0])
-		}
+		return nil, handleErrorResponse(heads[0])
 	}
 }
