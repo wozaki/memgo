@@ -70,58 +70,11 @@ func (c *Client) Add(item Item) error {
 }
 
 func (c *Client) Get(k string) (response *Response, err error) {
-	conn := NewConnection(c, k)
-	defer conn.Close()
-
-	command := "get"
-
-	req := []string{command, k}
-	conn.Write([]byte(strings.Join(req, " ") + Newline))
-
-	// The format is here:
-	// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
-	// <data block>\r\n
-	scanner := bufio.NewScanner(conn)
-	scanner.Scan()
-	heads := strings.Split(scanner.Text(), " ")
-	switch heads[0] {
-	case "END":
-		return nil, nil
-	case "VALUE":
-		flags, _ := strconv.ParseUint(heads[2], 10, 32)
-		scanner.Scan()
-		return &Response{Key: k, Value: scanner.Text(), Flags: uint32(flags)}, nil
-	default:
-		return nil, handleErrorResponse(heads[0])
-	}
+	return c.retrieve(k, "get")
 }
 
 func (c *Client) Gets(k string) (response *Response, err error) {
-	conn := NewConnection(c, k)
-	defer conn.Close()
-
-	command := "gets"
-
-	req := []string{command, k}
-	conn.Write([]byte(strings.Join(req, " ") + Newline))
-
-	// The format is here:
-	// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
-	// <data block>\r\n
-	scanner := bufio.NewScanner(conn)
-	scanner.Scan()
-	heads := strings.Split(scanner.Text(), " ")
-	switch heads[0] {
-	case "END":
-		return nil, nil
-	case "VALUE":
-		flags, _ := strconv.ParseUint(heads[2], 10, 32)
-		casId, _ := strconv.ParseUint(heads[3], 10, 64)
-		scanner.Scan()
-		return &Response{Key: k, Value: scanner.Text(), Flags: uint32(flags), CasId: uint64(casId)}, nil
-	default:
-		return nil, handleErrorResponse(heads[0])
-	}
+	return c.retrieve(k, "gets")
 }
 
 func (c *Client) store(command Command) error {
@@ -139,5 +92,34 @@ func (c *Client) store(command Command) error {
 		return ErrorNotStored
 	default:
 		return handleErrorResponse(s)
+	}
+}
+
+func (c *Client) retrieve(k string, command string) (response *Response, err error) {
+	conn := NewConnection(c, k)
+	defer conn.Close()
+
+	req := []string{command, k}
+	conn.Write([]byte(strings.Join(req, " ") + Newline))
+
+	// The format is here:
+	// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
+	// <data block>\r\n
+	scanner := bufio.NewScanner(conn)
+	scanner.Scan()
+	heads := strings.Split(scanner.Text(), " ")
+	switch heads[0] {
+	case "END":
+		return nil, nil
+	case "VALUE":
+		flags, _ := strconv.ParseUint(heads[2], 10, 32)
+		casId := uint64(0)
+		if len(heads) > 4 {
+			casId, _ = strconv.ParseUint(heads[3], 10, 64)
+		}
+		scanner.Scan()
+		return &Response{Key: k, Value: scanner.Text(), Flags: uint32(flags), CasId: uint64(casId)}, nil
+	default:
+		return nil, handleErrorResponse(heads[0])
 	}
 }
