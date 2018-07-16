@@ -30,33 +30,36 @@ func generateRndomString(n int) string {
 func TestSetAndGet(t *testing.T) {
 	flushAll(t)
 
-	key := "test_key"
-	value := "123"
+	t.Run("when the key size is 250", func(t *testing.T) {
+		key := generateRndomString(250)
+		value := "123"
 
-	Set(Item{Key: key, Value: value, Flags: 1, Exptime: 0})
-	actual, err := Get(key)
+		Set(Item{Key: key, Value: value, Flags: 1, Exptime: 0})
+		actual, err := Get(key)
 
-	if actual.Value != "123" {
-		t.Errorf("actual %v, expected %v", actual, "123")
-	}
-	if actual.Flags != 1 {
-		t.Errorf("actual %v, expected %v", actual, "1")
-	}
+		if actual.Value != "123" {
+			t.Errorf("actual %v, expected %v", actual, "123")
+		}
+		if actual.Flags != 1 {
+			t.Errorf("actual %v, expected %v", actual, "1")
+		}
 
-	if err != nil {
-		t.Errorf("return error %v", err)
-	}
+		if err != nil {
+			t.Errorf("return error %v", err)
+		}
+	})
 
-	// Test with over 251 character key
-	key251Len := generateRndomString(251)
-	Set(Item{Key: key251Len, Value: "123"})
-	actual, err = Get(key251Len)
-	if actual != nil {
-		t.Errorf("actual %v, expected %v", actual, "nil")
-	}
-	if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR" {
-		t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
-	}
+	t.Run("when the key size is 251", func(t *testing.T) {
+		key := generateRndomString(251)
+		Set(Item{Key: key, Value: "123"})
+		actual, err := Get(key)
+		if actual != nil {
+			t.Errorf("actual %v, expected %v", actual, "nil")
+		}
+		if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR" {
+			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
+		}
+	})
 }
 
 func TestGetNothing(t *testing.T) {
