@@ -69,7 +69,6 @@ func TestSetAndGet(t *testing.T) {
 
 	t.Run("when the key size is 251", func(t *testing.T) {
 		key := generateRndomString(251)
-		Set(Item{Key: key, Value: "123"})
 		actual, err := Get(key)
 		if actual != nil {
 			t.Errorf("actual %v, expected %v", actual, "nil")
