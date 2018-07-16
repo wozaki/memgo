@@ -88,6 +88,22 @@ func TestSetAndGet(t *testing.T) {
 	})
 }
 
+func TestGets(t *testing.T) {
+	// The size is 250
+	key := generateRandomString(250)
+	Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
+	actual, err := Gets(key)
+	if actual.Value != "123" {
+		t.Errorf("actual %v, expected %v", actual, "123")
+	}
+	if actual.Flags != 1 {
+		t.Errorf("actual %v, expected %v", actual, "1")
+	}
+	if err != nil {
+		t.Errorf("return error %v", err)
+	}
+}
+
 func TestAdd(t *testing.T) {
 	flushAll(t)
 
