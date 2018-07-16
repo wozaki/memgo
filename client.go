@@ -112,10 +112,16 @@ func (c *Client) retrieve(k string, command string) (response *Response, err err
 	case "END":
 		return nil, nil
 	case "VALUE":
-		flags, _ := strconv.ParseUint(heads[2], 10, 32)
+		flags, err := strconv.ParseUint(heads[2], 10, 32)
+		if err != nil {
+			return nil, err
+		}
 		casId := uint64(0)
 		if len(heads) > 4 {
-			casId, _ = strconv.ParseUint(heads[3], 10, 64)
+			casId, err = strconv.ParseUint(heads[3], 10, 64)
+			if err != nil {
+				return nil, err
+			}
 		}
 		scanner.Scan()
 		return &Response{Key: k, Value: scanner.Text(), Flags: uint32(flags), CasId: uint64(casId)}, nil
