@@ -38,6 +38,13 @@ type Item struct {
 	Exptime int // TODO: use time.Duration
 }
 
+type Response struct {
+	Key     string
+	Value   string
+	Flags   uint32
+	CasId   uint64
+}
+
 func Set(item Item) error {
 	return DefaultClient.Set(item)
 }
@@ -50,7 +57,7 @@ func Get(k string) (item *Item, err error) {
 	return DefaultClient.Get(k)
 }
 
-func Gets(k string) (item *Item, err error) {
+func Gets(k string) (response *Response, err error) {
 	return DefaultClient.Gets(k)
 }
 
@@ -89,7 +96,7 @@ func (c *Client) Get(k string) (item *Item, err error) {
 	}
 }
 
-func (c *Client) Gets(k string) (item *Item, err error) {
+func (c *Client) Gets(k string) (response *Response, err error) {
 	conn := NewConnection(c, k)
 	defer conn.Close()
 
@@ -109,8 +116,9 @@ func (c *Client) Gets(k string) (item *Item, err error) {
 		return nil, nil
 	case "VALUE":
 		flags, _ := strconv.ParseUint(heads[2], 10, 32)
+		casId, _ := strconv.ParseUint(heads[3], 10, 64)
 		scanner.Scan()
-		return &Item{Key: k, Value: scanner.Text(), Flags: uint32(flags)}, nil
+		return &Response{Key: k, Value: scanner.Text(), Flags: uint32(flags), CasId: uint64(casId)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}
