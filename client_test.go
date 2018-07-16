@@ -27,6 +27,24 @@ func generateRndomString(n int) string {
 	return string(b)
 }
 
+func TestSet(t *testing.T) {
+	t.Run("when the key size is 250", func(t *testing.T) {
+		key := generateRndomString(250)
+		err := Set(Item{Key: key, Value: "123"})
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+	})
+
+	t.Run("when the key size is 251", func(t *testing.T) {
+		key := generateRndomString(251)
+		err := Set(Item{Key: key, Value: "123"})
+		if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR bad command line format" {
+			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
+		}
+	})
+}
+
 func TestSetAndGet(t *testing.T) {
 	flushAll(t)
 
