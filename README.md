@@ -1,6 +1,8 @@
 # memgo
 memgo is a Memcached client for Go.
 
+[![CircleCI](https://circleci.com/gh/wozaki/memgo/tree/master.svg?style=svg)](https://circleci.com/gh/wozaki/memgo/tree/master)
+
 ## Example
 ```go
 import (
