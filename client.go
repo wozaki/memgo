@@ -5,11 +5,13 @@ import (
 	"strings"
 	"bufio"
 	"errors"
+	"time"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
 const Newline = "\r\n"
+const defaultConnectTimeout = 1 * time.Second
 
 var ErrorNotStored = errors.New("memcached returned NOT_STORED")
 
@@ -23,6 +25,11 @@ func handleErrorResponse(response string) error {
 
 type Client struct {
 	Destinations Destinations
+
+	// This is the maximum amount of time a client will wait for a connection to complete.
+	// The default is 1 second.
+	// You can't use 0. If 0, 1 second is used.
+	ConnectTimeout time.Duration
 }
 
 func NewClient(destinations []string) Client {
@@ -128,4 +135,11 @@ func (c *Client) retrieve(k string, command string) (response *Response, err err
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}
+}
+
+func (c *Client) connectTimeout() time.Duration {
+	if c.ConnectTimeout == 0 {
+		return defaultConnectTimeout
+	}
+	return c.ConnectTimeout
 }
