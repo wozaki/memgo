@@ -23,13 +23,14 @@ func handleErrorResponse(response string) error {
 
 type Client struct {
 	Destinations Destinations
+	Config       Config
 }
 
-func NewClient(destinations []string) Client {
-	return Client{Destinations: NewDestinations(destinations)}
+func NewClient(destinations []string, config Config) Client {
+	return Client{Destinations: NewDestinations(destinations), Config: config}
 }
 
-var DefaultClient = NewClient([]string{"localhost:11211"})
+var DefaultClient = NewClient([]string{"localhost:11211"}, Config{})
 
 type Item struct {
 	Key     string
