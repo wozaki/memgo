@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	mc := memgo.NewClient([]string{"cache1.example.com:11211", "cache2.example.com:11211"})
+	mc := memgo.NewClient([]string{"cache1.example.com:11211", "cache2.example.com:11211"}, memgo.Config{ConnectTimeout: 100 * time.Millisecond})
 	mc.Set(mc.Item{Key: "foo", Value: "my value"})
 
 	res, err := mc.Get("foo")
