@@ -79,7 +79,11 @@ func (c *Client) Gets(k string) (response *Response, err error) {
 }
 
 func (c *Client) store(command Command) error {
-	conn := NewConnection(c, command.item.Key)
+	conn, err := NewConnection(c, command.item.Key)
+	if err != nil {
+		return err
+	}
+
 	defer conn.Close()
 	conn.Write(command.buildRequest())
 
@@ -97,7 +101,11 @@ func (c *Client) store(command Command) error {
 }
 
 func (c *Client) retrieve(k string, command string) (response *Response, err error) {
-	conn := NewConnection(c, k)
+	conn, err := NewConnection(c, k)
+	if err != nil {
+		return nil, err
+	}
+
 	defer conn.Close()
 
 	req := []string{command, k}
