@@ -22,12 +22,12 @@ func handleErrorResponse(response string) error {
 }
 
 type Client struct {
-	Destinations Destinations
-	Config       Config
+	Servers Servers
+	Config  Config
 }
 
-func NewClient(destinations []string, config Config) Client {
-	return Client{Destinations: NewDestinations(destinations), Config: config}
+func NewClient(servers []string, config Config) Client {
+	return Client{Servers: NewServers(servers), Config: config}
 }
 
 var DefaultClient = NewClient([]string{"localhost:11211"}, Config{})
