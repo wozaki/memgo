@@ -102,7 +102,11 @@ func (c *Client) store(command Command) error {
 	}
 
 	defer conn.Close()
-	conn.Write(command.buildRequest())
+	req, err := command.buildRequest()
+	if err != nil {
+		return err
+	}
+	conn.Write(req)
 
 	scanner := bufio.NewScanner(conn)
 	scanner.Scan()
@@ -150,7 +154,11 @@ func (c *Client) retrieve(k string, command string) (response *Response, err err
 			}
 		}
 		scanner.Scan()
-		return &Response{Key: k, Value: scanner.Text(), Flags: uint32(flags), CasId: uint64(casId)}, nil
+		val, err := decompress(scanner.Bytes())
+		if err != nil {
+			return nil, err
+		}
+		return &Response{Key: k, Value: val, Flags: uint32(flags), CasId: uint64(casId)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}

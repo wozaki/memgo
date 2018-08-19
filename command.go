@@ -12,8 +12,16 @@ type Command struct {
 	item Item
 }
 
-func (c *Command) buildRequest() []byte {
-	byteSize := len(c.item.Value)
+func (c *Command) buildRequest() ([]byte, error) {
+	val, err := compress([]byte(c.item.Value))
+	if err != nil {
+		return nil, err
+	}
+
+	byteSize := len(val)
 	req := []string{c.name, c.item.Key, strconv.FormatUint(uint64(c.item.Flags),10), strconv.Itoa(c.item.Exptime), strconv.Itoa(byteSize)}
-	return []byte(strings.Join(req, " ") + Newline + c.item.Value + Newline)
+
+	r1 := append([]byte(strings.Join(req, " ")+Newline), val...)
+	r2 := append(r1, []byte(Newline)...)
+	return r2, nil
 }
