@@ -39,8 +39,8 @@ func TestSet(t *testing.T) {
 	t.Run("when the key size is 251", func(t *testing.T) {
 		key := generateRandomString(251)
 		err := Set(Item{Key: key, Value: "123"})
-		if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR bad command line format" {
-			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
+		if err.Error() != "client error: CLIENT_ERROR bad command line format" {
+			t.Errorf("actual %v, expected %v", err.Error() , "client error: CLIENT_ERROR")
 		}
 	})
 }
@@ -73,7 +73,7 @@ func TestSetAndGet(t *testing.T) {
 		if actual != nil {
 			t.Errorf("actual %v, expected %v", actual, "nil")
 		}
-		if err.Error() != "memcached returned CLIENT_ERROR: CLIENT_ERROR" {
+		if err.Error() != "client error: CLIENT_ERROR" {
 			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
 		}
 	})

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"bufio"
 	"errors"
+	"fmt"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
@@ -13,11 +14,27 @@ const Newline = "\r\n"
 
 var ErrorNotStored = errors.New("memcached returned NOT_STORED")
 
+type ErrClient struct {
+	Response  string
+}
+
+func (e *ErrClient) Error() string {
+	return fmt.Sprintf("client error: %s", e.Response)
+}
+
+type ErrServer struct {
+	Response  string
+}
+
+func (e *ErrServer) Error() string {
+	return fmt.Sprintf("server error: %s", e.Response)
+}
+
 func handleErrorResponse(response string) error {
 	if strings.HasPrefix(response, "CLIENT_ERROR") {
-		return errors.New("memcached returned CLIENT_ERROR: " + response)
+		return &ErrClient{Response:response}
 	} else {
-		panic("returned unexpected value: " + response)
+		return &ErrServer{Response:response}
 	}
 }
 
