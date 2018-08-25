@@ -102,7 +102,7 @@ func (c *Client) store(command Command) error {
 	}
 
 	defer conn.Close()
-	req, err := command.buildRequest(c.Config.Compress)
+	req, err := command.buildRequest(c.Config)
 	if err != nil {
 		return err
 	}

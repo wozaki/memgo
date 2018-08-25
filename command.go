@@ -12,8 +12,8 @@ type Command struct {
 	item Item
 }
 
-func (c *Command) buildRequest(shouldCompress bool) ([]byte, error) {
-	val, err := c.serialize(shouldCompress)
+func (c *Command) buildRequest(config Config) ([]byte, error) {
+	val, err := c.serialize(config)
 	if err != nil {
 		return nil, err
 	}
@@ -26,9 +26,12 @@ func (c *Command) buildRequest(shouldCompress bool) ([]byte, error) {
 	return r2, nil
 }
 
-func (c *Command) serialize(shouldCompress bool) ([]byte, error) {
+
+//TODO: compress if given compress flag
+func (c *Command) serialize(config Config) ([]byte, error) {
 	val := []byte(c.item.Value)
-	if !shouldCompress {
+
+	if len(val) < config.compressThresholdByte() {
 		return val, nil
 	}
 

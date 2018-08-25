@@ -49,25 +49,25 @@ func TestCompress(t *testing.T) {
 	val := generateRandomString(1024 * 1024)
 	item := Item{Key: "key", Value: val}
 
-	t.Run("without Compress", func(t *testing.T) {
+	t.Run("with 1MB value and no CompressThresholdByte", func(t *testing.T) {
 		flushAll(t)
 
 		client := NewClient([]string{testServer}, Config{})
 
 		err := client.Set(item)
-		if err.Error() != "server error: SERVER_ERROR object too large for cache" {
-			t.Errorf("actual %v, expected %v", err.Error(), "server error: SERVER_ERROR object too large for cache")
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 	})
 
-	t.Run("with Compress", func(t *testing.T) {
+	t.Run("with 1MB value and 2MB CompressThresholdByte", func(t *testing.T) {
 		flushAll(t)
 
-		client := NewClient([]string{testServer}, Config{Compress:true})
+		client := NewClient([]string{testServer}, Config{CompressThresholdByte:1024 * 1024 *2})
 
 		err := client.Set(item)
-		if err != nil {
-			t.Errorf("actual %v, expected %v", err, "nil")
+		if err.Error() != "server error: SERVER_ERROR object too large for cache" {
+			t.Errorf("actual %v, expected %v", err.Error(), "server error: SERVER_ERROR object too large for cache")
 		}
 	})
 }
