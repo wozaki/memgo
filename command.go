@@ -12,8 +12,8 @@ type Command struct {
 	item Item
 }
 
-func (c *Command) buildRequest() ([]byte, error) {
-	val, err := compress([]byte(c.item.Value))
+func (c *Command) buildRequest(shouldCompress bool) ([]byte, error) {
+	val, err := c.serialize(shouldCompress)
 	if err != nil {
 		return nil, err
 	}
@@ -24,4 +24,18 @@ func (c *Command) buildRequest() ([]byte, error) {
 	r1 := append([]byte(strings.Join(req, " ")+Newline), val...)
 	r2 := append(r1, []byte(Newline)...)
 	return r2, nil
+}
+
+func (c *Command) serialize(shouldCompress bool) ([]byte, error) {
+	val := []byte(c.item.Value)
+	if !shouldCompress {
+		return val, nil
+	}
+
+	compressed, err := compress(val)
+	if err != nil {
+		return nil, err
+	}
+
+	return compressed, nil
 }

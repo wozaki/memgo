@@ -11,6 +11,7 @@ type Config struct {
 	// The default is 1 second.
 	// You can't use 0. If 0, 1 second is used.
 	ConnectTimeout time.Duration
+	Compress bool
 }
 
 func (config *Config) connectTimeout() time.Duration {
