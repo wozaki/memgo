@@ -13,7 +13,6 @@ func compress(value []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	w.Close()
 	err = w.Close()
 	if err != nil {
 		return nil, err
