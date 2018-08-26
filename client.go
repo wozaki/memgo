@@ -53,7 +53,7 @@ func NewClient(servers []string, config Config) Client {
 var DefaultClient = NewClient([]string{"localhost:11211"}, Config{})
 
 type Flags struct {
-	Value   uint16
+	Value   uint16 // use 16 bit for the backward compatibility. In memcached 1.2.1 and higher, flags may be 32-bits.
 }
 
 func (f *Flags) shouldCompress() bool {
@@ -70,7 +70,7 @@ type Item struct {
 type Response struct {
 	Key     string
 	Value   string
-	Flags   uint32
+	Flags   uint16
 	CasId   uint64
 }
 
@@ -153,7 +153,7 @@ func (c *Client) retrieve(k string, command string) (response *Response, err err
 	case "END":
 		return nil, nil
 	case "VALUE":
-		flags, err := strconv.ParseUint(heads[2], 10, 32)
+		flags, err := strconv.ParseUint(heads[2], 10, 16)
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +169,7 @@ func (c *Client) retrieve(k string, command string) (response *Response, err err
 		if err != nil {
 			return nil, err
 		}
-		return &Response{Key: k, Value: val, Flags: uint32(flags), CasId: uint64(casId)}, nil
+		return &Response{Key: k, Value: val, Flags: uint16(flags), CasId: uint64(casId)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}
