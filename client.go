@@ -10,7 +10,10 @@ import (
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
-const Newline = "\r\n"
+const (
+	Newline             = "\r\n"
+	CompressFlag uint16 = 0x1
+)
 
 var ErrorNotStored = errors.New("memcached returned NOT_STORED")
 
@@ -49,10 +52,18 @@ func NewClient(servers []string, config Config) Client {
 
 var DefaultClient = NewClient([]string{"localhost:11211"}, Config{})
 
+type Flags struct {
+	Value   uint16
+}
+
+func (f *Flags) shouldCompress() bool {
+	return f.Value & CompressFlag != 0
+}
+
 type Item struct {
 	Key     string
 	Value   string
-	Flags   uint32
+	Flags   Flags
 	Exptime int // TODO: use time.Duration
 }
 

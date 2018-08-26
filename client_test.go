@@ -47,14 +47,13 @@ func TestSet(t *testing.T) {
 
 func TestCompress(t *testing.T) {
 	val := generateRandomString(1024 * 1024)
-	item := Item{Key: "key", Value: val}
 
 	t.Run("with 1MB value and no CompressThresholdByte", func(t *testing.T) {
 		flushAll(t)
 
 		client := NewClient([]string{testServer}, Config{})
 
-		err := client.Set(item)
+		err := client.Set(Item{Key: "key", Value: val})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
 		}
@@ -65,9 +64,20 @@ func TestCompress(t *testing.T) {
 
 		client := NewClient([]string{testServer}, Config{CompressThresholdByte:1024 * 1024 *2})
 
-		err := client.Set(item)
+		err := client.Set(Item{Key: "key", Value: val})
 		if err.Error() != "server error: SERVER_ERROR object too large for cache" {
 			t.Errorf("actual %v, expected %v", err.Error(), "server error: SERVER_ERROR object too large for cache")
+		}
+	})
+
+	t.Run("with 1MB value and 2MB CompressThresholdByte and CompressFlag", func(t *testing.T) {
+		flushAll(t)
+
+		client := NewClient([]string{testServer}, Config{CompressThresholdByte:1024 * 1024 *2})
+
+		err := client.Set(Item{Key: "key", Value: val, Flags: Flags{Value: CompressFlag}})
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 	})
 }
@@ -78,7 +88,7 @@ func TestSetAndGet(t *testing.T) {
 
 		// The size is 250
 		key := generateRandomString(250)
-		Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
+		Set(Item{Key: key, Value: "123", Exptime: 0})
 		actual, err := Get(key)
 		if actual.Value != "123" {
 			t.Errorf("actual %v, expected %v", actual, "123")
@@ -95,7 +105,7 @@ func TestSetAndGet(t *testing.T) {
 
 		// The size is 251
 		key = generateRandomString(251)
-		Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
+		Set(Item{Key: key, Value: "123", Exptime: 0})
 		actual, err = Get(key)
 		if actual != nil {
 			t.Errorf("actual %v, expected %v", actual, "nil")
@@ -121,7 +131,7 @@ func TestSetAndGet(t *testing.T) {
 func TestGets(t *testing.T) {
 	// The size is 250
 	key := generateRandomString(250)
-	Set(Item{Key: key, Value: "123", Flags: 1, Exptime: 0})
+	Set(Item{Key: key, Value: "123", Flags: Flags{Value:1}, Exptime: 0})
 	actual, err := Gets(key)
 	if actual.Value != "123" {
 		t.Errorf("actual %v, expected %v", actual, "123")

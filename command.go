@@ -19,19 +19,17 @@ func (c *Command) buildRequest(config Config) ([]byte, error) {
 	}
 
 	byteSize := len(val)
-	req := []string{c.name, c.item.Key, strconv.FormatUint(uint64(c.item.Flags),10), strconv.Itoa(c.item.Exptime), strconv.Itoa(byteSize)}
+	req := []string{c.name, c.item.Key, strconv.FormatUint(uint64(c.item.Flags.Value),10), strconv.Itoa(c.item.Exptime), strconv.Itoa(byteSize)}
 
 	r1 := append([]byte(strings.Join(req, " ")+Newline), val...)
 	r2 := append(r1, []byte(Newline)...)
 	return r2, nil
 }
 
-
-//TODO: compress if given compress flag
 func (c *Command) serialize(config Config) ([]byte, error) {
 	val := []byte(c.item.Value)
 
-	if len(val) < config.compressThresholdByte() {
+	if !c.item.Flags.shouldCompress() && len(val) < config.compressThresholdByte() {
 		return val, nil
 	}
 
