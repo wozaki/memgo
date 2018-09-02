@@ -11,10 +11,6 @@ type Servers struct {
 	ConnectTimeout time.Duration
 }
 
-func (s *Servers) Get(key string) (server string, err error) {
-	return s.Hashing.Get(key)
-}
-
 func NewServers(servers []string, connectTimeout time.Duration) Servers {
 	c := consistent.New()
 	for _, d := range servers {
@@ -24,7 +20,7 @@ func NewServers(servers []string, connectTimeout time.Duration) Servers {
 }
 
 func (s *Servers) connect(key string) (net.Conn, error) {
-	server, err := s.Get(key)
+	server, err := s.Hashing.Get(key)
 	if err != nil {
 		return nil, err
 	}
