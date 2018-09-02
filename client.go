@@ -80,16 +80,8 @@ func Set(item Item) error {
 	return DefaultClient.Set(item)
 }
 
-func Add(item Item) error {
-	return DefaultClient.Add(item)
-}
-
 func Get(k string) (response *Response, err error) {
 	return DefaultClient.Get(k)
-}
-
-func Gets(k string) (response *Response, err error) {
-	return DefaultClient.Gets(k)
 }
 
 func (c *Client) Set(item Item) error {

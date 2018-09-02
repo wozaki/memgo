@@ -157,8 +157,10 @@ func TestSetAndGet(t *testing.T) {
 func TestGets(t *testing.T) {
 	// The size is 250
 	key := generateRandomString(250)
-	Set(Item{Key: key, Value: "123", Flags: Flags{Value:1}, Exptime: 0})
-	actual, err := Gets(key)
+	client := NewClient([]string{testServer}, Config{})
+	client.Set(Item{Key: key, Value: "123", Flags: Flags{Value:1}, Exptime: 0})
+
+	actual, err := client.Gets(key)
 	if actual.Value != "123" {
 		t.Errorf("actual %v, expected %v", actual, "123")
 	}
@@ -178,8 +180,9 @@ func TestAdd(t *testing.T) {
 
 	key := "test_key"
 	value := "123"
+	client := NewClient([]string{testServer}, Config{})
 
-	addedErr := Add(Item{Key: key, Value: value})
+	addedErr := client.Add(Item{Key: key, Value: value})
 	if addedErr != nil {
 		t.Errorf("expected addedErr is nil")
 	}
@@ -189,7 +192,7 @@ func TestAdd(t *testing.T) {
 		t.Errorf("actual %v, expected %v", actual, "123")
 	}
 
-	addAgain := Add(Item{Key: key, Value: value})
+	addAgain := client.Add(Item{Key: key, Value: value})
 	if addAgain != ErrorNotStored {
 		t.Errorf("Add must return ErrorNotStored given the same key")
 	}
