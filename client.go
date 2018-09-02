@@ -185,6 +185,16 @@ func (c *Client) retrieve(k string, command string) (response *Response, err err
 		if err != nil {
 			return nil, err
 		}
+
+		var val = ""
+		if uint16(flags) & CompressFlag != 0 {
+			val, err = decompress(buf.Bytes())
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			val = string(buf.Bytes())
+		}
 		return &Response{Key: k, Value: val, Flags: uint16(flags), CasId: uint64(casId)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
