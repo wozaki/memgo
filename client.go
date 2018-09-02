@@ -1,11 +1,13 @@
 package memgo
 
 import (
-	"strconv"
-	"strings"
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
@@ -146,26 +148,40 @@ func (c *Client) retrieve(k string, command string) (response *Response, err err
 	// The format is here:
 	// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
 	// <data block>\r\n
-	scanner := bufio.NewScanner(conn)
-	scanner.Scan()
-	heads := strings.Split(scanner.Text(), " ")
+	bufReader := bufio.NewReader(conn)
+	headBytes, _, err := bufReader.ReadLine()
+	if err != nil {
+		return nil, err
+	}
+
+	heads := strings.Split(string(headBytes), " ")
 	switch heads[0] {
 	case "END":
 		return nil, nil
 	case "VALUE":
-		flags, err := strconv.ParseUint(heads[2], 10, 16)
+		flags, err := strconv.ParseUint(heads[2], 16, 16)
+		if err != nil {
+			return nil, err
+		}
+
+		byteSize, err := strconv.Atoi(heads[3])
 		if err != nil {
 			return nil, err
 		}
 		casId := uint64(0)
 		if len(heads) > 4 {
-			casId, err = strconv.ParseUint(heads[3], 10, 64)
+			casId, err = strconv.ParseUint(heads[4], 10, 64)
 			if err != nil {
 				return nil, err
 			}
 		}
-		scanner.Scan()
-		val, err := decompress(scanner.Bytes())
+
+		// Scanner can't read large data. https://golang.org/pkg/bufio/#Scanner >Scanning stops unrecoverably at EOF, the first I/O error, or a token too large to fit in the buffer
+		var buf bytes.Buffer
+		written, err := io.CopyN(&buf, bufReader, int64(byteSize))
+		if written != int64(byteSize) {
+			return nil, fmt.Errorf("cannot read all value: expected %d, actual %d", byteSize, written)
+		}
 		if err != nil {
 			return nil, err
 		}
