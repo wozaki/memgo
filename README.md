@@ -27,6 +27,7 @@ go get github.com/wozaki/memgo
 
 Feature | Description
  --- |---
+Sharding | The algorithm is Consistent Hashing.  
 Compression | The format follows [compress/zlib](https://golang.org/pkg/compress/zlib/).<br><br> There are two kinds of compression:<br> 1: compress automatically if an item size over the threshold. The default threshold size is 1MB. You can configure the threshold size with `Config.CompressThresholdByte`<br> 2: compress manually if given CompressFlag with storage commands like `Set(Item{Key: key, Value: val, Flags: Flags{Value: CompressFlag}})`. It will compress the item even if the size of item under the threshold.  
 
 ## License
