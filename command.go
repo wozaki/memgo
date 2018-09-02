@@ -10,10 +10,15 @@ import (
 type Command struct {
 	name string
 	item Item
+	compressThresholdByte int
 }
 
-func (c *Command) buildRequest(config Config) ([]byte, error) {
-	val, flags, err := c.serialize(config)
+func NewCommand(name string, item Item, compressThresholdByte int) Command {
+	return Command{name: name, item: item, compressThresholdByte: compressThresholdByte}
+}
+
+func (c *Command) buildRequest() ([]byte, error) {
+	val, flags, err := c.serialize()
 	if err != nil {
 		return nil, err
 	}
@@ -26,10 +31,10 @@ func (c *Command) buildRequest(config Config) ([]byte, error) {
 	return r2, nil
 }
 
-func (c *Command) serialize(config Config) ([]byte, Flags, error) {
+func (c *Command) serialize() ([]byte, Flags, error) {
 	val := []byte(c.item.Value)
 
-	if !c.item.Flags.shouldCompress() && len(val) < config.compressThresholdByte() {
+	if !c.shouldCompress(val) {
 		return val, Flags{}, nil
 	}
 
@@ -39,4 +44,16 @@ func (c *Command) serialize(config Config) ([]byte, Flags, error) {
 	}
 
 	return compressed, Flags{Value: CompressFlag}, nil
+}
+
+func (c *Command) shouldCompress(value []byte) bool {
+	if c.item.Flags.shouldCompress() {
+		return true
+	}
+
+	if len(value) >= c.compressThresholdByte {
+		return true
+	}
+
+	return false
 }

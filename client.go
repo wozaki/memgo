@@ -58,11 +58,11 @@ func Get(k string) (response *Response, err error) {
 }
 
 func (c *Client) Set(item Item) error {
-	return c.store(Command{name: "set", item: item})
+	return c.store(NewCommand("set", item, c.Config.compressThresholdByte()))
 }
 
 func (c *Client) Add(item Item) error {
-	return c.store(Command{name: "add", item: item})
+	return c.store(NewCommand("add", item, c.Config.compressThresholdByte()))
 }
 
 func (c *Client) Get(k string) (response *Response, err error) {
@@ -80,7 +80,7 @@ func (c *Client) store(command Command) error {
 	}
 
 	defer conn.Close()
-	req, err := command.buildRequest(c.Config)
+	req, err := command.buildRequest()
 	if err != nil {
 		return err
 	}
