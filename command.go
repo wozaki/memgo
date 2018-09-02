@@ -23,17 +23,8 @@ type StorageCommand struct {
 	compressThresholdByte int
 }
 
-type RetrievalCommand struct {
-	name string
-	key string
-}
-
 func NewStorageCommand(name string, item Item, compressThresholdByte int) Command {
 	return &StorageCommand{name: name, item: item, compressThresholdByte: compressThresholdByte}
-}
-
-func NewRetrievalCommand(name string, key string) Command {
-	return &RetrievalCommand{name: name, key: key}
 }
 
 func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
@@ -61,10 +52,6 @@ func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
 
 func (c *StorageCommand) Key() string {
 	return c.item.Key
-}
-
-func (c *RetrievalCommand) Key() string {
-	return c.key
 }
 
 func (c *StorageCommand) buildRequest() ([]byte, error) {
@@ -106,6 +93,15 @@ func (c *StorageCommand) shouldCompress(value []byte) bool {
 	}
 
 	return false
+}
+
+type RetrievalCommand struct {
+	name string
+	key string
+}
+
+func NewRetrievalCommand(name string, key string) Command {
+	return &RetrievalCommand{name: name, key: key}
 }
 
 func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
@@ -166,4 +162,8 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}
+}
+
+func (c *RetrievalCommand) Key() string {
+	return c.key
 }
