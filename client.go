@@ -49,7 +49,7 @@ type Client struct {
 }
 
 func NewClient(servers []string, config Config) Client {
-	return Client{Servers: NewServers(servers), Config: config}
+	return Client{Servers: NewServers(servers, config.connectTimeout()), Config: config}
 }
 
 var DefaultClient = NewClient([]string{"localhost:11211"}, Config{})
@@ -101,7 +101,7 @@ func (c *Client) Gets(k string) (response *Response, err error) {
 }
 
 func (c *Client) store(command Command) error {
-	conn, err := NewConnection(c, command.item.Key)
+	conn, err := c.Servers.connect(command.item.Key)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (c *Client) store(command Command) error {
 }
 
 func (c *Client) retrieve(k string, command string) (response *Response, err error) {
-	conn, err := NewConnection(c, k)
+	conn, err := c.Servers.connect(k)
 	if err != nil {
 		return nil, err
 	}
