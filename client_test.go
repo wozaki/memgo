@@ -60,6 +60,27 @@ func TestSet(t *testing.T) {
 	})
 }
 
+func TestMemcachedInjection(t *testing.T) {
+	flushAll(t)
+
+	key := "foo\r\nset bar 0 0 4\r\ntest"
+	actual, err := Get(key)
+	if actual != nil {
+		t.Errorf("actual %v, expected %v", actual, "nil")
+	}
+	if err != nil {
+		t.Errorf("actual %v, expected %v", err, "nil")
+	}
+
+	actual2, err2 := Get("bar")
+	if actual2.Value == "test" {
+		t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "nil")
+	}
+	if err2 != nil {
+		t.Errorf("actual %v, expected %v", err2, "nil")
+	}
+}
+
 func TestSetAndGet(t *testing.T) {
 	t.Run("Test Key size", func(t *testing.T) {
 		flushAll(t)
