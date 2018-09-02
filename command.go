@@ -1,23 +1,73 @@
 package memgo
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"io"
+	"net"
 	"strconv"
 	"strings"
 )
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
-type Command struct {
+type Command interface {
+	Perform(conn net.Conn) (res *Response, err error)
+	Key() string
+}
+
+type StorageCommand struct {
 	name string
 	item Item
 	compressThresholdByte int
 }
 
-func NewCommand(name string, item Item, compressThresholdByte int) Command {
-	return Command{name: name, item: item, compressThresholdByte: compressThresholdByte}
+type RetrievalCommand struct {
+	name string
+	key string
 }
 
-func (c *Command) buildRequest() ([]byte, error) {
+func NewStorageCommand(name string, item Item, compressThresholdByte int) Command {
+	return &StorageCommand{name: name, item: item, compressThresholdByte: compressThresholdByte}
+}
+
+func NewRetrievalCommand(name string, key string) Command {
+	return &RetrievalCommand{name: name, key: key}
+}
+
+func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
+	req, err := c.buildRequest()
+	if err != nil {
+		return nil, err
+	}
+	_, err = conn.Write(req)
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(conn)
+	scanner.Scan()
+	s := scanner.Text()
+	switch s {
+	case "STORED":
+		return nil, nil
+	case "NOT_STORED":
+		return nil, ErrorNotStored
+	default:
+		return nil, handleErrorResponse(s)
+	}
+}
+
+func (c *StorageCommand) Key() string {
+	return c.item.Key
+}
+
+func (c *RetrievalCommand) Key() string {
+	return c.key
+}
+
+func (c *StorageCommand) buildRequest() ([]byte, error) {
 	val, flags, err := c.serialize()
 	if err != nil {
 		return nil, err
@@ -31,7 +81,7 @@ func (c *Command) buildRequest() ([]byte, error) {
 	return r2, nil
 }
 
-func (c *Command) serialize() ([]byte, Flags, error) {
+func (c *StorageCommand) serialize() ([]byte, Flags, error) {
 	val := []byte(c.item.Value)
 
 	if !c.shouldCompress(val) {
@@ -46,7 +96,7 @@ func (c *Command) serialize() ([]byte, Flags, error) {
 	return compressed, Flags{Value: CompressFlag}, nil
 }
 
-func (c *Command) shouldCompress(value []byte) bool {
+func (c *StorageCommand) shouldCompress(value []byte) bool {
 	if c.item.Flags.shouldCompress() {
 		return true
 	}
@@ -56,4 +106,64 @@ func (c *Command) shouldCompress(value []byte) bool {
 	}
 
 	return false
+}
+
+func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
+	req := []string{c.name, c.key}
+	conn.Write([]byte(strings.Join(req, " ") + Newline))
+
+	// The format is here:
+	// VALUE <Key> <flags> <bytes> [<cas unique>]\r\n
+	// <data block>\r\n
+	bufReader := bufio.NewReader(conn)
+	headBytes, _, err := bufReader.ReadLine()
+	if err != nil {
+		return nil, err
+	}
+
+	heads := strings.Split(string(headBytes), " ")
+	switch heads[0] {
+	case "END":
+		return nil, nil
+	case "VALUE":
+		flags, err := strconv.ParseUint(heads[2], 16, 16)
+		if err != nil {
+			return nil, err
+		}
+
+		byteSize, err := strconv.Atoi(heads[3])
+		if err != nil {
+			return nil, err
+		}
+		casId := uint64(0)
+		if len(heads) > 4 {
+			casId, err = strconv.ParseUint(heads[4], 10, 64)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Scanner can't read large data. https://golang.org/pkg/bufio/#Scanner >Scanning stops unrecoverably at EOF, the first I/O error, or a token too large to fit in the buffer
+		var buf bytes.Buffer
+		written, err := io.CopyN(&buf, bufReader, int64(byteSize))
+		if written != int64(byteSize) {
+			return nil, fmt.Errorf("cannot read all value: expected %d, actual %d", byteSize, written)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		var val = ""
+		if uint16(flags) & CompressFlag != 0 {
+			val, err = decompress(buf.Bytes())
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			val = string(buf.Bytes())
+		}
+		return &Response{Key: c.key, Value: val, Flags: uint16(flags), CasId: uint64(casId)}, nil
+	default:
+		return nil, handleErrorResponse(heads[0])
+	}
 }
