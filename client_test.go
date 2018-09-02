@@ -46,6 +46,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestCompress(t *testing.T) {
+	key := "key"
 	val := generateRandomString(1024 * 1024)
 
 	t.Run("with 1MB value and no CompressThresholdByte", func(t *testing.T) {
@@ -53,18 +54,32 @@ func TestCompress(t *testing.T) {
 
 		client := NewClient([]string{testServer}, Config{})
 
-		err := client.Set(Item{Key: "key", Value: val})
+		err := client.Set(Item{Key: key, Value: val})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+
+		actual, err := client.Get(key)
+		if actual.Value != val {
+			t.Errorf("actual %v, expected %v", "ac", 1)
+		}
+		if actual.Flags != CompressFlag {
+			t.Errorf("actual %v, expected %v", actual.Flags, CompressFlag)
+		}
+		if actual.CasId != 0 {
+			t.Errorf("actual %v, expected %v", actual.CasId, "0")
+		}
+		if err != nil {
+			t.Errorf("return error %v", err)
 		}
 	})
 
 	t.Run("with 1MB value and 2MB CompressThresholdByte", func(t *testing.T) {
 		flushAll(t)
 
-		client := NewClient([]string{testServer}, Config{CompressThresholdByte:1024 * 1024 *2})
+		client := NewClient([]string{testServer}, Config{CompressThresholdByte: 1024 * 1024 * 2})
 
-		err := client.Set(Item{Key: "key", Value: val})
+		err := client.Set(Item{Key: key, Value: val})
 		if err.Error() != "server error: SERVER_ERROR object too large for cache" {
 			t.Errorf("actual %v, expected %v", err.Error(), "server error: SERVER_ERROR object too large for cache")
 		}
@@ -73,11 +88,22 @@ func TestCompress(t *testing.T) {
 	t.Run("with 1MB value and 2MB CompressThresholdByte and CompressFlag", func(t *testing.T) {
 		flushAll(t)
 
-		client := NewClient([]string{testServer}, Config{CompressThresholdByte:1024 * 1024 *2})
+		client := NewClient([]string{testServer}, Config{CompressThresholdByte: 1024 * 1024 * 2})
 
-		err := client.Set(Item{Key: "key", Value: val, Flags: Flags{Value: CompressFlag}})
+		err := client.Set(Item{Key: key, Value: val, Flags: Flags{Value: CompressFlag}})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+
+		actual, err := client.Get(key)
+		if actual.Value != val {
+			t.Errorf("actual %v, expected %v", "", val)
+		}
+		if actual.Flags != CompressFlag {
+			t.Errorf("it should compress if given CompressFlag: actual %v, expected %v", actual.Flags, CompressFlag)
+		}
+		if err != nil {
+			t.Errorf("return error %v", err)
 		}
 	})
 }
@@ -93,8 +119,8 @@ func TestSetAndGet(t *testing.T) {
 		if actual.Value != "123" {
 			t.Errorf("actual %v, expected %v", actual, "123")
 		}
-		if actual.Flags != 1 {
-			t.Errorf("actual %v, expected %v", actual, "1")
+		if actual.Flags != 0 {
+			t.Errorf("actual %v, expected %v", actual, "0")
 		}
 		if actual.CasId != 0 {
 			t.Errorf("actual %v, expected %v", actual.CasId, "0")
