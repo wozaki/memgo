@@ -12,6 +12,10 @@ import (
 
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
+const (
+	Newline = "\r\n"
+)
+
 type Command interface {
 	Perform(conn net.Conn) (res *Response, err error)
 	Key() string

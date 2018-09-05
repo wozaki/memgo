@@ -3,7 +3,6 @@ package memgo
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
 const (
-	Newline             = "\r\n"
 	CompressFlag uint16 = 0x1
 )
 
