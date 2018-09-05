@@ -109,8 +109,7 @@ func NewRetrievalCommand(name string, key string) Command {
 }
 
 func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
-	req := []string{c.name, c.key}
-	conn.Write([]byte(strings.Join(req, " ") + Newline))
+	conn.Write(c.buildRequest())
 
 	// The format is here:
 	// VALUE <Key> <flags> <bytes> [<cas unique>]\r\n
@@ -171,4 +170,9 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 
 func (c *RetrievalCommand) Key() string {
 	return c.key
+}
+
+func (c *RetrievalCommand) buildRequest() []byte {
+	req := []string{c.name, c.key}
+	return []byte(strings.Join(req, " ") + Newline)
 }
