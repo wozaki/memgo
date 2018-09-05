@@ -101,7 +101,7 @@ func TestGets(t *testing.T) {
 	if actual.Value != "123" {
 		t.Errorf("actual %v, expected %v", actual, "123")
 	}
-	if actual.Flags != 1 {
+	if actual.Flags.Value != 1 {
 		t.Errorf("actual %v, expected %v", actual, "1")
 	}
 	if actual.CasId == 0 {
@@ -174,7 +174,7 @@ func TestCompress(t *testing.T) {
 		if actual.Value != val {
 			t.Errorf("actual %v, expected %v", "ac", 1)
 		}
-		if actual.Flags != CompressFlag {
+		if actual.Flags.Value != CompressFlag {
 			t.Errorf("actual %v, expected %v", actual.Flags, CompressFlag)
 		}
 		if actual.CasId != 0 {
@@ -210,7 +210,7 @@ func TestCompress(t *testing.T) {
 		if actual.Value != val {
 			t.Errorf("actual %v, expected %v", "", val)
 		}
-		if actual.Flags != CompressFlag {
+		if actual.Flags.Value != CompressFlag {
 			t.Errorf("it should compress if given CompressFlag: actual %v, expected %v", actual.Flags, CompressFlag)
 		}
 		if err != nil {

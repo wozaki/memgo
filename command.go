@@ -158,7 +158,7 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 		} else {
 			val = string(buf.Bytes())
 		}
-		return &Response{Key: c.key, Value: val, Flags: uint16(flags), CasId: uint64(casId)}, nil
+		return &Response{Key: c.key, Value: val, Flags: Flags{Value: uint16(flags)}, CasId: uint64(casId)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}

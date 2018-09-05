@@ -36,7 +36,7 @@ type Item struct {
 type Response struct {
 	Key     string
 	Value   string
-	Flags   uint16
+	Flags   Flags
 	CasId   uint64
 }
 
