@@ -28,25 +28,40 @@ func generateRandomString(n int) string {
 }
 
 func TestSet(t *testing.T) {
-	t.Run("when the key size is 250", func(t *testing.T) {
+	t.Run("when the Key size is 250", func(t *testing.T) {
 		key := generateRandomString(250)
-		err := Set(Item{Key: key, Value: "123"})
+		res, err := Set(Item{Key: key, Value: "123"})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
 		}
+		if res.Key != key {
+			t.Errorf("actual %v, expected %v", res.Key, key)
+		}
+		if res.Value != "123" {
+			t.Errorf("actual %v, expected %v", res.Value, "123")
+		}
+		if res.Flags != (Flags{}) {
+			t.Errorf("actual %v, expected %v", res.Flags, Flags{})
+		}
+		if res.CasId != 0 {
+			t.Errorf("actual %v, expected %v", res.CasId, 0)
+		}
 	})
 
-	t.Run("when the key size is 251", func(t *testing.T) {
+	t.Run("when the Key size is 251", func(t *testing.T) {
 		key := generateRandomString(251)
-		err := Set(Item{Key: key, Value: "123"})
+		res, err := Set(Item{Key: key, Value: "123"})
 		if err.Error() != "client error: CLIENT_ERROR bad command line format" {
 			t.Errorf("actual %v, expected %v", err.Error() , "client error: CLIENT_ERROR")
+		}
+		if res != nil {
+			t.Errorf("actual %v, expected %v", res, "nil")
 		}
 	})
 }
 
 func TestSetAndGet(t *testing.T) {
-	t.Run("Test key size", func(t *testing.T) {
+	t.Run("Test Key size", func(t *testing.T) {
 		flushAll(t)
 
 		// The size is 250
@@ -56,7 +71,7 @@ func TestSetAndGet(t *testing.T) {
 		if actual.Value != "123" {
 			t.Errorf("actual %v, expected %v", actual, "123")
 		}
-		if actual.Flags != 0 {
+		if actual.Flags != (Flags{}) {
 			t.Errorf("actual %v, expected %v", actual, "0")
 		}
 		if actual.CasId != 0 {
@@ -101,7 +116,7 @@ func TestGets(t *testing.T) {
 	if actual.Value != "123" {
 		t.Errorf("actual %v, expected %v", actual, "123")
 	}
-	if actual.Flags != 1 {
+	if actual.Flags.Value != 1 {
 		t.Errorf("actual %v, expected %v", actual, "1")
 	}
 	if actual.CasId == 0 {
@@ -119,7 +134,7 @@ func TestAdd(t *testing.T) {
 	value := "123"
 	client := NewClient([]string{testServer}, Config{})
 
-	addedErr := client.Add(Item{Key: key, Value: value})
+	_, addedErr := client.Add(Item{Key: key, Value: value})
 	if addedErr != nil {
 		t.Errorf("expected addedErr is nil")
 	}
@@ -129,9 +144,9 @@ func TestAdd(t *testing.T) {
 		t.Errorf("actual %v, expected %v", actual, "123")
 	}
 
-	addAgain := client.Add(Item{Key: key, Value: value})
+	_, addAgain := client.Add(Item{Key: key, Value: value})
 	if addAgain != ErrorNotStored {
-		t.Errorf("Add must return ErrorNotStored given the same key")
+		t.Errorf("Add must return ErrorNotStored given the same Key")
 	}
 }
 
@@ -157,7 +172,7 @@ func TestSharding(t *testing.T) {
 }
 
 func TestCompress(t *testing.T) {
-	key := "key"
+	key := "Key"
 	val := generateRandomString(1024 * 1024)
 
 	t.Run("with 1MB value and no CompressThresholdByte", func(t *testing.T) {
@@ -165,16 +180,19 @@ func TestCompress(t *testing.T) {
 
 		client := NewClient([]string{testServer}, Config{})
 
-		err := client.Set(Item{Key: key, Value: val})
+		res, err := client.Set(Item{Key: key, Value: val})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+		if res.Flags.Value != CompressFlag {
+			t.Errorf("actual %v, expected %v", res.Flags, Flags{})
 		}
 
 		actual, err := client.Get(key)
 		if actual.Value != val {
 			t.Errorf("actual %v, expected %v", "ac", 1)
 		}
-		if actual.Flags != CompressFlag {
+		if actual.Flags.Value != CompressFlag {
 			t.Errorf("actual %v, expected %v", actual.Flags, CompressFlag)
 		}
 		if actual.CasId != 0 {
@@ -190,7 +208,7 @@ func TestCompress(t *testing.T) {
 
 		client := NewClient([]string{testServer}, Config{CompressThresholdByte: 1024 * 1024 * 2})
 
-		err := client.Set(Item{Key: key, Value: val})
+		_, err := client.Set(Item{Key: key, Value: val})
 		if err.Error() != "server error: SERVER_ERROR object too large for cache" {
 			t.Errorf("actual %v, expected %v", err.Error(), "server error: SERVER_ERROR object too large for cache")
 		}
@@ -201,7 +219,7 @@ func TestCompress(t *testing.T) {
 
 		client := NewClient([]string{testServer}, Config{CompressThresholdByte: 1024 * 1024 * 2})
 
-		err := client.Set(Item{Key: key, Value: val, Flags: Flags{Value: CompressFlag}})
+		_, err := client.Set(Item{Key: key, Value: val, Flags: Flags{Value: CompressFlag}})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
 		}
@@ -210,7 +228,7 @@ func TestCompress(t *testing.T) {
 		if actual.Value != val {
 			t.Errorf("actual %v, expected %v", "", val)
 		}
-		if actual.Flags != CompressFlag {
+		if actual.Flags.Value != CompressFlag {
 			t.Errorf("it should compress if given CompressFlag: actual %v, expected %v", actual.Flags, CompressFlag)
 		}
 		if err != nil {
