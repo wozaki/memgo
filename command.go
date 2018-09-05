@@ -28,7 +28,7 @@ func NewStorageCommand(name string, item Item, compressThresholdByte int) Comman
 }
 
 func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
-	req, err := c.buildRequest()
+	req, flags, err := c.buildRequest()
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
 	s := scanner.Text()
 	switch s {
 	case "STORED":
-		return nil, nil
+		return &Response{Key: c.item.Key, Value: c.item.Value, Flags: flags}, nil
 	case "NOT_STORED":
 		return nil, ErrorNotStored
 	default:
@@ -54,10 +54,10 @@ func (c *StorageCommand) Key() string {
 	return c.item.Key
 }
 
-func (c *StorageCommand) buildRequest() ([]byte, error) {
+func (c *StorageCommand) buildRequest() ([]byte, Flags, error) {
 	val, flags, err := c.serialize()
 	if err != nil {
-		return nil, err
+		return nil, Flags{}, err
 	}
 
 	byteSize := len(val)
@@ -65,7 +65,7 @@ func (c *StorageCommand) buildRequest() ([]byte, error) {
 
 	r1 := append([]byte(strings.Join(req, " ")+Newline), val...)
 	r2 := append(r1, []byte(Newline)...)
-	return r2, nil
+	return r2, flags, nil
 }
 
 func (c *StorageCommand) serialize() ([]byte, Flags, error) {

@@ -56,7 +56,7 @@ func TestSetAndGet(t *testing.T) {
 		if actual.Value != "123" {
 			t.Errorf("actual %v, expected %v", actual, "123")
 		}
-		if actual.Flags != 0 {
+		if actual.Flags != (Flags{}) {
 			t.Errorf("actual %v, expected %v", actual, "0")
 		}
 		if actual.CasId != 0 {
