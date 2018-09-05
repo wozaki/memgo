@@ -30,17 +30,32 @@ func generateRandomString(n int) string {
 func TestSet(t *testing.T) {
 	t.Run("when the Key size is 250", func(t *testing.T) {
 		key := generateRandomString(250)
-		_, err := Set(Item{Key: key, Value: "123"})
+		res, err := Set(Item{Key: key, Value: "123"})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+		if res.Key != key {
+			t.Errorf("actual %v, expected %v", res.Key, key)
+		}
+		if res.Value != "123" {
+			t.Errorf("actual %v, expected %v", res.Value, "123")
+		}
+		if res.Flags != (Flags{}) {
+			t.Errorf("actual %v, expected %v", res.Flags, Flags{})
+		}
+		if res.CasId != 0 {
+			t.Errorf("actual %v, expected %v", res.CasId, 0)
 		}
 	})
 
 	t.Run("when the Key size is 251", func(t *testing.T) {
 		key := generateRandomString(251)
-		_, err := Set(Item{Key: key, Value: "123"})
+		res, err := Set(Item{Key: key, Value: "123"})
 		if err.Error() != "client error: CLIENT_ERROR bad command line format" {
 			t.Errorf("actual %v, expected %v", err.Error() , "client error: CLIENT_ERROR")
+		}
+		if res != nil {
+			t.Errorf("actual %v, expected %v", res, "nil")
 		}
 	})
 }
@@ -165,9 +180,12 @@ func TestCompress(t *testing.T) {
 
 		client := NewClient([]string{testServer}, Config{})
 
-		_, err := client.Set(Item{Key: key, Value: val})
+		res, err := client.Set(Item{Key: key, Value: val})
 		if err != nil {
 			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+		if res.Flags.Value != CompressFlag {
+			t.Errorf("actual %v, expected %v", res.Flags, Flags{})
 		}
 
 		actual, err := client.Get(key)
