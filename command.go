@@ -122,11 +122,12 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 	case "END":
 		return nil, nil
 	case "VALUE":
-		flags, err := strconv.ParseUint(heads[2], 16, 16)
+		rawFlags, err := strconv.ParseUint(heads[2], 16, 16)
 		if err != nil {
 			return nil, err
 		}
 
+		flags := Flags{Value: uint16(rawFlags)}
 		byteSize, err := strconv.Atoi(heads[3])
 		if err != nil {
 			return nil, err
@@ -150,7 +151,7 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 		}
 
 		var val = ""
-		if uint16(flags) & CompressFlag != 0 {
+		if flags.shouldCompress() {
 			val, err = decompress(buf.Bytes())
 			if err != nil {
 				return nil, err
@@ -158,7 +159,7 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 		} else {
 			val = string(buf.Bytes())
 		}
-		return &Response{Key: c.key, Value: val, Flags: Flags{Value: uint16(flags)}, CasId: uint64(casId)}, nil
+		return &Response{Key: c.key, Value: val, Flags: flags, CasId: uint64(casId)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}
