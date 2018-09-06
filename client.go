@@ -1,5 +1,7 @@
 package memgo
 
+import "net/url"
+
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
 const (
@@ -13,6 +15,15 @@ type Client struct {
 
 func NewClient(servers []string, config Config) Client {
 	return Client{Servers: NewServers(servers, config.connectTimeout()), Config: config}
+}
+
+type Key struct {
+	body string
+}
+
+func newKey(value string) Key {
+	escaped := url.QueryEscape(value)
+	return Key{body: escaped}
 }
 
 var DefaultClient = NewClient([]string{"localhost:11211"}, Config{})

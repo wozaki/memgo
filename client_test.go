@@ -73,8 +73,8 @@ func TestMemcachedInjection(t *testing.T) {
 	}
 
 	actual2, err2 := Get("bar")
-	if actual2.Value == "test" {
-		t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "nil")
+	if actual2 == (&Response{}) {
+		t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "Response{}")
 	}
 	if err2 != nil {
 		t.Errorf("actual %v, expected %v", err2, "nil")
