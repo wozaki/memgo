@@ -48,19 +48,27 @@ func Get(k string) (response *Response, err error) {
 }
 
 func (c *Client) Set(item Item) (res *Response, err error) {
-	return c.request(NewStorageCommand("set", item, c.Config.compressThresholdByte()))
+	return c.store("set", item)
 }
 
 func (c *Client) Add(item Item) (res *Response, err error) {
-	return c.request(NewStorageCommand("add", item, c.Config.compressThresholdByte()))
+	return c.store("add", item)
 }
 
 func (c *Client) Get(k string) (response *Response, err error) {
-	return c.request(NewRetrievalCommand("get", k))
+	return c.retrieve("get", k)
 }
 
 func (c *Client) Gets(k string) (response *Response, err error) {
-	return c.request(NewRetrievalCommand("gets", k))
+	return c.retrieve("gets", k)
+}
+
+func (c *Client) store(operation string, item Item) (res *Response, err error) {
+	return c.request(NewStorageCommand(operation, item, c.Config.compressThresholdByte()))
+}
+
+func (c *Client) retrieve(operation string, key string) (res *Response, err error) {
+	return c.request(NewRetrievalCommand(operation, key))
 }
 
 func (c *Client) request(command Command) (res *Response, err error) {
