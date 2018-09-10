@@ -48,6 +48,14 @@ func TestSet(t *testing.T) {
 		if res.CasId != 0 {
 			t.Errorf("actual %v, expected %v", res.CasId, 0)
 		}
+
+		res, err = Get(key)
+		if res.Value != "123" {
+			t.Errorf("actual %v, expected %v", res.Value, "123")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
 	})
 
 	t.Run("when the Key size is 251", func(t *testing.T) {
@@ -55,11 +63,19 @@ func TestSet(t *testing.T) {
 
 		key := generateRandomString(251)
 		res, err := Set(Item{Key: key, Value: "123"})
-		if err.Error() != "client error: CLIENT_ERROR bad command line format" {
-			t.Errorf("actual %v, expected %v", err.Error() , "client error: CLIENT_ERROR")
+		if res.Key == key {
+			t.Errorf("key should be converted: actual %v, expected %v", res.Key, key)
 		}
-		if res != nil {
-			t.Errorf("actual %v, expected %v", res, "nil")
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+
+		res, err = Get(key)
+		if res.Value != "123" {
+			t.Errorf("actual %v, expected %v", res.Value, "123")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 	})
 }
