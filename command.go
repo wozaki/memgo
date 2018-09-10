@@ -126,7 +126,7 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 	heads := strings.Split(string(headBytes), " ")
 	switch heads[0] {
 	case "END":
-		return nil, nil
+		return &Response{}, nil
 	case "VALUE":
 		rawFlags, err := strconv.ParseUint(heads[2], 16, 16)
 		if err != nil {
