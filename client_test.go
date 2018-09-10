@@ -81,6 +81,24 @@ func TestMemcachedInjection(t *testing.T) {
 			t.Errorf("actual %v, expected %v", err2, "nil")
 		}
 	})
+
+	t.Run("interprets data to store as command", func(t *testing.T) {
+		flushAll(t)
+
+		actual, err := Set(Item{Key:generateRandomString(251), Value: "set injected 0 3600 5\r\n12345"})
+		if actual != nil {
+			t.Errorf("actual %v, expected %v", actual, "nil")
+		}
+		_, isErrClient := err.(*ErrClient)
+		if !isErrClient {
+			t.Errorf("actual %v, expected %v", err, "ErrClient")
+		}
+
+		actual2, _ := Get("injected")
+		if actual2.Value == "12345" {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "Response{}")
+		}
+	})
 }
 
 func TestSetAndGet(t *testing.T) {
