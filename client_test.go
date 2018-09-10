@@ -29,6 +29,8 @@ func generateRandomString(n int) string {
 
 func TestSet(t *testing.T) {
 	t.Run("when the Key size is 250", func(t *testing.T) {
+		flushAll(t)
+
 		key := generateRandomString(250)
 		res, err := Set(Item{Key: key, Value: "123"})
 		if err != nil {
@@ -49,6 +51,8 @@ func TestSet(t *testing.T) {
 	})
 
 	t.Run("when the Key size is 251", func(t *testing.T) {
+		flushAll(t)
+
 		key := generateRandomString(251)
 		res, err := Set(Item{Key: key, Value: "123"})
 		if err.Error() != "client error: CLIENT_ERROR bad command line format" {
@@ -148,6 +152,8 @@ func TestSetAndGet(t *testing.T) {
 }
 
 func TestGets(t *testing.T) {
+	flushAll(t)
+
 	// The size is 250
 	key := generateRandomString(250)
 	client := NewClient([]string{testServer}, Config{})
