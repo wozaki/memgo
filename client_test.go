@@ -29,6 +29,8 @@ func generateRandomString(n int) string {
 
 func TestSet(t *testing.T) {
 	t.Run("when the Key size is 250", func(t *testing.T) {
+		flushAll(t)
+
 		key := generateRandomString(250)
 		res, err := Set(Item{Key: key, Value: "123"})
 		if err != nil {
@@ -46,16 +48,87 @@ func TestSet(t *testing.T) {
 		if res.CasId != 0 {
 			t.Errorf("actual %v, expected %v", res.CasId, 0)
 		}
+
+		res, err = Get(key)
+		if res.Value != "123" {
+			t.Errorf("actual %v, expected %v", res.Value, "123")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
 	})
 
 	t.Run("when the Key size is 251", func(t *testing.T) {
+		flushAll(t)
+
 		key := generateRandomString(251)
 		res, err := Set(Item{Key: key, Value: "123"})
-		if err.Error() != "client error: CLIENT_ERROR bad command line format" {
-			t.Errorf("actual %v, expected %v", err.Error() , "client error: CLIENT_ERROR")
+		if res.Key == key {
+			t.Errorf("key should be converted: actual %v, expected %v", res.Key, key)
 		}
-		if res != nil {
-			t.Errorf("actual %v, expected %v", res, "nil")
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+
+		res, err = Get(key)
+		if res.Value != "123" {
+			t.Errorf("actual %v, expected %v", res.Value, "123")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+	})
+}
+
+func TestMemcachedInjection(t *testing.T) {
+	t.Run("command injection", func(t *testing.T) {
+		flushAll(t)
+
+		key := "foo\r\nset bar 0 0 4\r\ntest"
+		actual, err := Get(key)
+		if actual.Value != "" {
+			t.Errorf("actual %v, expected %v", actual, "nil")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+
+		actual2, err2 := Get("bar")
+		if actual2 == (&Response{}) {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "Response{}")
+		}
+		if err2 != nil {
+			t.Errorf("actual %v, expected %v", err2, "nil")
+		}
+	})
+
+	t.Run("interprets data to store as command", func(t *testing.T) {
+		flushAll(t)
+
+		actual, err := Set(Item{Key:generateRandomString(251), Value: "set injected 0 3600 5\r\n12345"})
+		if actual.Value != "set injected 0 3600 5\r\n12345" {
+			t.Errorf("actual %v, expected %v", actual, "set injected 0 3600 5\r\n12345")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+
+		actual2, _ := Get("injected")
+		if actual2.Value == "12345" {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "Response{}")
+		}
+	})
+
+	t.Run("argument injection", func(t *testing.T) {
+		flushAll(t)
+
+		Set(Item{Key:"key 0", Value: "123456789012345678901234567890\r\nset injected 0 3600 3\r\nINJ", Exptime: 30})
+		actual, err := Get("injected")
+		if actual.Value != "" {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, "")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 	})
 }
@@ -85,11 +158,11 @@ func TestSetAndGet(t *testing.T) {
 		key = generateRandomString(251)
 		Set(Item{Key: key, Value: "123", Exptime: 0})
 		actual, err = Get(key)
-		if actual != nil {
-			t.Errorf("actual %v, expected %v", actual, "nil")
+		if actual.Value != "123" {
+			t.Errorf("actual %v, expected %v", actual, "123")
 		}
-		if err.Error() != "client error: CLIENT_ERROR" {
-			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 	})
 
@@ -97,8 +170,8 @@ func TestSetAndGet(t *testing.T) {
 		flushAll(t)
 		
 		actual, err := Get("hoge")
-		if actual != nil {
-			t.Errorf("actual %v, expected %v", actual, "nil")
+		if actual.Value != "" {
+			t.Errorf("actual %v, expected %v", actual, "")
 		}
 		if err != nil {
 			t.Errorf("return error %v", err)
@@ -107,6 +180,8 @@ func TestSetAndGet(t *testing.T) {
 }
 
 func TestGets(t *testing.T) {
+	flushAll(t)
+
 	// The size is 250
 	key := generateRandomString(250)
 	client := NewClient([]string{testServer}, Config{})

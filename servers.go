@@ -20,7 +20,7 @@ func NewServers(servers []string, connectTimeout time.Duration) Servers {
 }
 
 func (s *Servers) request(command Command) (res *Response, err error) {
-	conn, err := s.connect(command.Key())
+	conn, err := s.connect(command.Key().body)
 	if err != nil {
 		return nil, err
 	}

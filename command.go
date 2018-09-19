@@ -18,17 +18,20 @@ const (
 
 type Command interface {
 	Perform(conn net.Conn) (res *Response, err error)
-	Key() string
+	Key() Key
 }
 
 type StorageCommand struct {
-	name string
-	item Item
+	name                  string
+	key                   Key
+	value                 string
+	flags                 Flags
+	exptime               int
 	compressThresholdByte int
 }
 
 func NewStorageCommand(name string, item Item, compressThresholdByte int) Command {
-	return &StorageCommand{name: name, item: item, compressThresholdByte: compressThresholdByte}
+	return &StorageCommand{name: name, key: newKey(item.Key), value: item.Value, flags: item.Flags, exptime: item.Exptime, compressThresholdByte: compressThresholdByte}
 }
 
 func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
@@ -46,7 +49,7 @@ func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
 	s := scanner.Text()
 	switch s {
 	case "STORED":
-		return &Response{Key: c.item.Key, Value: c.item.Value, Flags: flags}, nil
+		return &Response{Key: c.key.body, Value: c.value, Flags: flags}, nil
 	case "NOT_STORED":
 		return nil, ErrorNotStored
 	default:
@@ -54,8 +57,8 @@ func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
 	}
 }
 
-func (c *StorageCommand) Key() string {
-	return c.item.Key
+func (c *StorageCommand) Key() Key {
+	return c.key
 }
 
 func (c *StorageCommand) buildRequest() ([]byte, Flags, error) {
@@ -65,7 +68,7 @@ func (c *StorageCommand) buildRequest() ([]byte, Flags, error) {
 	}
 
 	byteSize := len(val)
-	req := []string{c.name, c.item.Key, strconv.FormatUint(uint64(flags.Value),10), strconv.Itoa(c.item.Exptime), strconv.Itoa(byteSize)}
+	req := []string{c.name, c.key.body, strconv.FormatUint(uint64(flags.Value),10), strconv.Itoa(c.exptime), strconv.Itoa(byteSize)}
 
 	r1 := append([]byte(strings.Join(req, " ")+Newline), val...)
 	r2 := append(r1, []byte(Newline)...)
@@ -73,7 +76,7 @@ func (c *StorageCommand) buildRequest() ([]byte, Flags, error) {
 }
 
 func (c *StorageCommand) serialize() ([]byte, Flags, error) {
-	val := []byte(c.item.Value)
+	val := []byte(c.value)
 
 	if !c.shouldCompress(val) {
 		return val, Flags{}, nil
@@ -88,7 +91,7 @@ func (c *StorageCommand) serialize() ([]byte, Flags, error) {
 }
 
 func (c *StorageCommand) shouldCompress(value []byte) bool {
-	if c.item.Flags.shouldCompress() {
+	if c.flags.shouldCompress() {
 		return true
 	}
 
@@ -101,11 +104,11 @@ func (c *StorageCommand) shouldCompress(value []byte) bool {
 
 type RetrievalCommand struct {
 	name string
-	key string
+	key Key
 }
 
 func NewRetrievalCommand(name string, key string) Command {
-	return &RetrievalCommand{name: name, key: key}
+	return &RetrievalCommand{name: name, key: newKey(key)}
 }
 
 func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
@@ -123,7 +126,7 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 	heads := strings.Split(string(headBytes), " ")
 	switch heads[0] {
 	case "END":
-		return nil, nil
+		return &Response{}, nil
 	case "VALUE":
 		rawFlags, err := strconv.ParseUint(heads[2], 16, 16)
 		if err != nil {
@@ -162,17 +165,17 @@ func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {
 		} else {
 			val = string(buf.Bytes())
 		}
-		return &Response{Key: c.key, Value: val, Flags: flags, CasId: uint64(casId)}, nil
+		return &Response{Key: c.key.body, Value: val, Flags: flags, CasId: uint64(casId)}, nil
 	default:
 		return nil, handleErrorResponse(heads[0])
 	}
 }
 
-func (c *RetrievalCommand) Key() string {
+func (c *RetrievalCommand) Key() Key {
 	return c.key
 }
 
 func (c *RetrievalCommand) buildRequest() []byte {
-	req := []string{c.name, c.key}
+	req := []string{c.name, c.key.body}
 	return []byte(strings.Join(req, " ") + Newline)
 }

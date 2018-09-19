@@ -1,5 +1,11 @@
 package memgo
 
+import (
+	"crypto/md5"
+	"encoding/hex"
+	"net/url"
+)
+
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
 const (
@@ -13,6 +19,24 @@ type Client struct {
 
 func NewClient(servers []string, config Config) Client {
 	return Client{Servers: NewServers(servers, config.connectTimeout()), Config: config}
+}
+
+type Key struct {
+	body string
+}
+
+func hashMD5(s string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(s))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func newKey(value string) Key {
+	escaped := url.QueryEscape(value)
+	if len(escaped) > 250 {
+		escaped = hashMD5(escaped)
+	}
+	return Key{body: escaped}
 }
 
 var DefaultClient = NewClient([]string{"localhost:11211"}, Config{})
