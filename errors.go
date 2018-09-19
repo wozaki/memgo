@@ -6,7 +6,10 @@ import (
 	"strings"
 )
 
-var ErrorNotStored = errors.New("memcached returned NOT_STORED")
+var (
+	ErrorNotStored = errors.New("memcached returned NOT_STORED")
+	ErrCacheMiss   = errors.New("memcached cache miss")
+)
 
 type ErrClient struct {
 	Response string

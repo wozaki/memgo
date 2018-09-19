@@ -87,19 +87,19 @@ func TestMemcachedInjection(t *testing.T) {
 
 		key := "foo\r\nset bar 0 0 4\r\ntest"
 		actual, err := Get(key)
-		if actual.Value != "" {
+		if actual != nil {
 			t.Errorf("actual %v, expected %v", actual, "nil")
 		}
-		if err != nil {
-			t.Errorf("actual %v, expected %v", err, "nil")
+		if err != ErrCacheMiss {
+			t.Errorf("actual %v, expected %v", err, ErrCacheMiss)
 		}
 
 		actual2, err2 := Get("bar")
 		if actual2 == (&Response{}) {
 			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "Response{}")
 		}
-		if err2 != nil {
-			t.Errorf("actual %v, expected %v", err2, "nil")
+		if err2 != ErrCacheMiss {
+			t.Errorf("actual %v, expected %v", err2, ErrCacheMiss)
 		}
 	})
 
@@ -114,9 +114,12 @@ func TestMemcachedInjection(t *testing.T) {
 			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 
-		actual2, _ := Get("injected")
-		if actual2.Value == "12345" {
-			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "Response{}")
+		actual2, err2 := Get("injected")
+		if actual2 != nil {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "nil")
+		}
+		if err2 != ErrCacheMiss {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, ErrCacheMiss)
 		}
 	})
 
@@ -125,11 +128,11 @@ func TestMemcachedInjection(t *testing.T) {
 
 		Set(Item{Key:"key 0", Value: "123456789012345678901234567890\r\nset injected 0 3600 3\r\nINJ", Exptime: 30})
 		actual, err := Get("injected")
-		if actual.Value != "" {
-			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, "")
+		if actual != nil {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, "nil")
 		}
-		if err != nil {
-			t.Errorf("actual %v, expected %v", err, "nil")
+		if err != ErrCacheMiss {
+			t.Errorf("actual %v, expected %v", err, ErrCacheMiss)
 		}
 	})
 
@@ -138,11 +141,11 @@ func TestMemcachedInjection(t *testing.T) {
 
 		Set(Item{Key:"key", Value: "123456789\000\r\nset injected 0 3600 3\r\nINJ\r\n"})
 		actual, err := Get("injected")
-		if actual.Value != "" {
-			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, "")
+		if actual != nil {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, nil)
 		}
-		if err != nil {
-			t.Errorf("actual %v, expected %v", err, "nil")
+		if err != ErrCacheMiss {
+			t.Errorf("actual %v, expected %v", err, ErrCacheMiss)
 		}
 	})
 }
@@ -184,10 +187,10 @@ func TestSetAndGet(t *testing.T) {
 		flushAll(t)
 		
 		actual, err := Get("hoge")
-		if actual.Value != "" {
-			t.Errorf("actual %v, expected %v", actual, "")
+		if actual != nil {
+			t.Errorf("actual %v, expected %v", actual, "nil")
 		}
-		if err != nil {
+		if err != ErrCacheMiss {
 			t.Errorf("return error %v", err)
 		}
 	})
