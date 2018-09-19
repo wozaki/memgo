@@ -131,6 +131,19 @@ func TestMemcachedInjection(t *testing.T) {
 			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 	})
+
+	t.Run("Data length breaking (null-byte)", func(t *testing.T) {
+		flushAll(t)
+
+		Set(Item{Key:"key", Value: "123456789\000\r\nset injected 0 3600 3\r\nINJ\r\n"})
+		actual, err := Get("injected")
+		if actual.Value != "" {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, "")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+	})
 }
 
 func TestSetAndGet(t *testing.T) {
