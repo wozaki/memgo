@@ -86,7 +86,7 @@ func TestMemcachedInjection(t *testing.T) {
 
 		key := "foo\r\nset bar 0 0 4\r\ntest"
 		actual, err := Get(key)
-		if actual != nil {
+		if actual.Value != "" {
 			t.Errorf("actual %v, expected %v", actual, "nil")
 		}
 		if err != nil {
@@ -106,12 +106,11 @@ func TestMemcachedInjection(t *testing.T) {
 		flushAll(t)
 
 		actual, err := Set(Item{Key:generateRandomString(251), Value: "set injected 0 3600 5\r\n12345"})
-		if actual != nil {
-			t.Errorf("actual %v, expected %v", actual, "nil")
+		if actual.Value != "set injected 0 3600 5\r\n12345" {
+			t.Errorf("actual %v, expected %v", actual, "set injected 0 3600 5\r\n12345")
 		}
-		_, isErrClient := err.(*ErrClient)
-		if !isErrClient {
-			t.Errorf("actual %v, expected %v", err, "ErrClient")
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 
 		actual2, _ := Get("injected")
@@ -146,11 +145,11 @@ func TestSetAndGet(t *testing.T) {
 		key = generateRandomString(251)
 		Set(Item{Key: key, Value: "123", Exptime: 0})
 		actual, err = Get(key)
-		if actual != nil {
-			t.Errorf("actual %v, expected %v", actual, "nil")
+		if actual.Value != "123" {
+			t.Errorf("actual %v, expected %v", actual, "123")
 		}
-		if err.Error() != "client error: CLIENT_ERROR" {
-			t.Errorf("actual %v, expected %v", err.Error() , "memcached returned CLIENT_ERROR: CLIENT_ERROR")
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
 		}
 	})
 
@@ -158,8 +157,8 @@ func TestSetAndGet(t *testing.T) {
 		flushAll(t)
 		
 		actual, err := Get("hoge")
-		if actual != nil {
-			t.Errorf("actual %v, expected %v", actual, "nil")
+		if actual.Value != "" {
+			t.Errorf("actual %v, expected %v", actual, "")
 		}
 		if err != nil {
 			t.Errorf("return error %v", err)
