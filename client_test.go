@@ -80,6 +80,7 @@ func TestSet(t *testing.T) {
 	})
 }
 
+// see 05 Memcache injections classification https://www.blackhat.com/docs/us-14/materials/us-14-Novikov-The-New-Page-Of-Injections-Book-Memcached-Injections-WP.pdf
 func TestMemcachedInjection(t *testing.T) {
 	t.Run("command injection", func(t *testing.T) {
 		flushAll(t)
