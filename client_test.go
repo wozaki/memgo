@@ -80,6 +80,7 @@ func TestSet(t *testing.T) {
 	})
 }
 
+// see 05 Memcache injections classification https://www.blackhat.com/docs/us-14/materials/us-14-Novikov-The-New-Page-Of-Injections-Book-Memcached-Injections-WP.pdf
 func TestMemcachedInjection(t *testing.T) {
 	t.Run("command injection", func(t *testing.T) {
 		flushAll(t)
@@ -123,6 +124,19 @@ func TestMemcachedInjection(t *testing.T) {
 		flushAll(t)
 
 		Set(Item{Key:"key 0", Value: "123456789012345678901234567890\r\nset injected 0 3600 3\r\nINJ", Exptime: 30})
+		actual, err := Get("injected")
+		if actual.Value != "" {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, "")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+	})
+
+	t.Run("Data length breaking (null-byte)", func(t *testing.T) {
+		flushAll(t)
+
+		Set(Item{Key:"key", Value: "123456789\000\r\nset injected 0 3600 3\r\nINJ\r\n"})
 		actual, err := Get("injected")
 		if actual.Value != "" {
 			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, "")
