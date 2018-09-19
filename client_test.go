@@ -118,6 +118,19 @@ func TestMemcachedInjection(t *testing.T) {
 			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual2, "Response{}")
 		}
 	})
+
+	t.Run("argument injection", func(t *testing.T) {
+		flushAll(t)
+
+		Set(Item{Key:"key 0", Value: "123456789012345678901234567890\r\nset injected 0 3600 3\r\nINJ", Exptime: 30})
+		actual, err := Get("injected")
+		if actual.Value != "" {
+			t.Errorf("it has MemcachedInjection risk!. actual %v, expected %v", actual, "")
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+	})
 }
 
 func TestSetAndGet(t *testing.T) {
