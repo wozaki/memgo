@@ -30,8 +30,8 @@ type StorageCommand struct {
 	compressThresholdByte int
 }
 
-func NewStorageCommand(name string, item Item, compressThresholdByte int) Command {
-	return &StorageCommand{name: name, key: newKey(item.Key), value: item.Value, flags: item.Flags, exptime: item.Exptime, compressThresholdByte: compressThresholdByte}
+func NewStorageCommand(name string, item Item, key Key, compressThresholdByte int) Command {
+	return &StorageCommand{name: name, key: key, value: item.Value, flags: item.Flags, exptime: item.Exptime, compressThresholdByte: compressThresholdByte}
 }
 
 func (c *StorageCommand) Perform(conn net.Conn) (res *Response, err error) {
@@ -107,8 +107,8 @@ type RetrievalCommand struct {
 	key Key
 }
 
-func NewRetrievalCommand(name string, key string) Command {
-	return &RetrievalCommand{name: name, key: newKey(key)}
+func NewRetrievalCommand(name string, key Key) Command {
+	return &RetrievalCommand{name: name, key: key}
 }
 
 func (c *RetrievalCommand) Perform(conn net.Conn) (res *Response, err error) {

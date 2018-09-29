@@ -31,12 +31,15 @@ func hashMD5(s string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func newKey(value string) Key {
-	escaped := url.QueryEscape(value)
-	if len(escaped) > 250 {
-		escaped = hashMD5(escaped)
+func newKey(value string, namespase string) Key {
+	k := url.QueryEscape(value)
+	if len(namespase) > 0 {
+		k = namespase + ":" + k
 	}
-	return Key{body: escaped}
+	if len(k) > 250 {
+		k = hashMD5(k)
+	}
+	return Key{body: k}
 }
 
 var DefaultClient = NewClient([]string{"localhost:11211"}, Config{})
@@ -88,11 +91,11 @@ func (c *Client) Gets(k string) (response *Response, err error) {
 }
 
 func (c *Client) store(operation string, item Item) (res *Response, err error) {
-	return c.request(NewStorageCommand(operation, item, c.Config.compressThresholdByte()))
+	return c.request(NewStorageCommand(operation, item, newKey(item.Key, c.Config.Namespace), c.Config.compressThresholdByte()))
 }
 
 func (c *Client) retrieve(operation string, key string) (res *Response, err error) {
-	return c.request(NewRetrievalCommand(operation, key))
+	return c.request(NewRetrievalCommand(operation, newKey(key, c.Config.Namespace)))
 }
 
 func (c *Client) request(command Command) (res *Response, err error) {
