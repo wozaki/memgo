@@ -13,6 +13,7 @@ type Config struct {
 	// You can't use 0. If 0, 1 second is used.
 	ConnectTimeout time.Duration
 	CompressThresholdByte int
+	Namespace string
 }
 
 func (config *Config) connectTimeout() time.Duration {
