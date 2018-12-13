@@ -328,3 +328,41 @@ func TestCompress(t *testing.T) {
 		}
 	})
 }
+
+func TestNamespace(t *testing.T) {
+	client := NewClient([]string{testServer}, Config{Namespace: "test"})
+
+	t.Run("When the length of key is 250", func(t *testing.T) {
+		flushAll(t)
+
+		key := generateRandomString(245) // len("test" + key) is 250
+		client.Set(Item{Key: key, Value: "123"})
+		actual, err := client.Get(key)
+		if actual.Value != "123" {
+			t.Errorf("actual %v, expected %v", actual, "123")
+		}
+		if actual.Key != "test:"+key {
+			t.Errorf("actual %v, expected %v", actual.Key, "test:"+key)
+		}
+		if err != nil {
+			t.Errorf("return error %v", err)
+		}
+	})
+
+	t.Run("When the length of key is 251", func(t *testing.T) {
+		flushAll(t)
+
+		key := generateRandomString(246) // len("test" + key) is 251
+		client.Set(Item{Key: key, Value: "123"})
+		actual, err := client.Get(key)
+		if actual.Value != "123" {
+			t.Errorf("actual %v, expected %v", actual, "123")
+		}
+		if actual.Key == "test:"+key {
+			t.Errorf("actual %v, expected %v", actual.Key, "test:"+key)
+		}
+		if err != nil {
+			t.Errorf("actual %v, expected %v", err, "nil")
+		}
+	})
+}
